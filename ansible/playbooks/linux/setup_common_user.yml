@@ -1,0 +1,70 @@
+---
+- name: Create system user for SSH and set default terminal
+  hosts: all
+  become: true
+  vars:
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default('test_user') }}"
+    user_home: "/home/{{ ssh_user }}"
+    bashrc_file: "{{ user_home }}/.bashrc"
+    bashrc_backup: "{{ bashrc_file }}.bak"
+
+  tasks:
+    - name: Ensure user exists
+      user:
+        name: "{{ ssh_user }}"
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: Ensure .ssh directory exists
+      file:
+        path: "{{ user_home }}/.ssh"
+        state: directory
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: '0700'
+
+    - name: Check if .bashrc exists
+      stat:
+        path: "{{ bashrc_file }}"
+      register: bashrc_check
+
+    - name: Backup .bashrc if it exists
+      copy:
+        src: "{{ bashrc_file }}"
+        dest: "{{ bashrc_backup }}"
+        remote_src: true
+      when: bashrc_check.stat.exists
+      ignore_errors: yes
+
+    - block:
+        - name: Set default terminal for new user
+          lineinfile:
+            path: "{{ bashrc_file }}"
+            line: 'export TERM=xterm'
+            create: yes
+            owner: "{{ ssh_user }}"
+            group: "{{ ssh_user }}"
+            mode: '0644'
+
+      rescue:
+        - name: Check if .bashrc backup exists
+          stat:
+            path: "{{ bashrc_backup }}"
+          register: bashrc_backup_check
+
+        - name: Restore original .bashrc on failure
+          copy:
+            src: "{{ bashrc_backup }}"
+            dest: "{{ bashrc_file }}"
+            remote_src: true
+          when: bashrc_backup_check.stat.exists
+
+        - name: Remove new .bashrc if backup did not exist
+          file:
+            path: "{{ bashrc_file }}"
+            state: absent
+          when: not bashrc_backup_check.stat.exists
+
+        - fail:
+            msg: "Failed to modify .bashrc. Changes rolled back."

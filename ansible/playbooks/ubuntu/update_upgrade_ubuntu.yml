@@ -1,0 +1,55 @@
+- name: Update and upgrade Ubuntu system
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    rollback_file: /tmp/rollback_packages.txt
+
+  tasks:
+    - name: Save current package list (for rollback)
+      command: dpkg --get-selections
+      register: current_packages
+      changed_when: false
+
+    - name: Store rollback state
+      copy:
+        content: "{{ current_packages.stdout }}"
+        dest: "{{ rollback_file }}"
+
+    - name: Check for deb822-format apt sources (Ubuntu 24.04+ default)
+      stat:
+        path: /etc/apt/sources.list.d/ubuntu.sources
+      register: deb822_sources
+
+    - name: Fix deb822 apt sources to use main mirror (avoid regional mirror failures)
+      replace:
+        path: /etc/apt/sources.list.d/ubuntu.sources
+        regexp: 'http://[a-z]{2}\.archive\.ubuntu\.com'
+        replace: 'http://archive.ubuntu.com'
+      when: deb822_sources.stat.exists
+
+    - name: Fix classic apt sources.list to use main mirror (Proxmox LXC template default)
+      replace:
+        path: /etc/apt/sources.list
+        regexp: 'http://[a-z]{2}\.archive\.ubuntu\.com'
+        replace: 'http://archive.ubuntu.com'
+      when: not deb822_sources.stat.exists
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+
+  handlers:
+    - name: Rollback system packages
+      shell: |
+        dpkg --clear-selections
+        cat {{ rollback_file }} | dpkg --set-selections
+        apt-get dselect-upgrade -y
+      listen: rollback

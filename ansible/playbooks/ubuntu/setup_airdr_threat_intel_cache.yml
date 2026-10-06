@@ -1,0 +1,644 @@
+---
+# AI-RDR capstone project — provisions the dedicated, narrowly-scoped
+# OpenSearch credential OpenSearchThreatIntelCache uses to read/write its
+# single, non-rotating ai-rdr-threat-intel-cache index on airdr-siem's
+# indexer (threat-intel-deployment-spec.md, Part 2, task 4.3 Phase B).
+#
+# Security model: this is a brand-new, separate credential - NOT a reuse of
+# irdp-writer's. irdp_writer_role grants write+create_index on ai-rdr-* but
+# deliberately NOT read (OpenSearch's "write" action group is index/update/
+# delete/bulk, not get/search) - OpenSearchThreatIntelCache.get() would 403
+# with it. Per this project's standing least-privilege-per-component
+# convention (wazuh-reader, irdp-writer, arm-executor, arm-action-state are
+# all separate, narrowly-scoped credentials - never reused across purposes),
+# this is a new role+user instead:
+#   - a new OpenSearch role `threat_intel_cache_role`, scoped to exactly:
+#     read+write+create_index on ai-rdr-threat-intel-cache - nothing else,
+#     no cluster_permissions.
+#   - a new internal user `threat-intel-cache-agent`, mapped to that role
+#     only, password generated on-host and pushed to Infisical at
+#     /threat-intel-credentials - the SAME path VIRUSTOTAL_API_KEY already
+#     lives at (setup_airdr_threat_intel_credential.yml). That path is read
+#     first and its existing secrets are included in the same batch write -
+#     never overwritten - same "generate on-host, push straight to
+#     Infisical, never write it to the repo or a task log" discipline
+#     already used throughout this project.
+#   - both created via the OpenSearch Security REST API (persists directly
+#     into the `.opendistro_security` index, no securityadmin.sh/restart
+#     needed), same as setup_airdr_irdp_writer.yml.
+#
+# Second play fetches everything at /threat-intel-credentials (the new
+# OpenSearch creds AND the VirusTotal key) into a new env file on
+# airdr-detect, threat_intel.env - separate from irdp.env, matching this
+# project's one-env-file-per-credential-set convention
+# (arm_opensearch.env/irdp.env).
+#
+# Third play wires the real, degraded-mode-safe CachedThreatIntelClient(
+# RealVirusTotalClient, OpenSearchThreatIntelCache) into run_irdp.py in
+# place of NullThreatIntelClient (explicit, logged fallback to
+# NullThreatIntelClient if VIRUSTOTAL_API_KEY is missing - this entrypoint
+# must never crash just because threat-intel enrichment isn't configured),
+# then restarts the irdp-poll timer and runs one immediate poll.
+#
+# Requires (passed as environment variables via the Semaphore Environment
+# attached to this template — never as -e/CLI arguments, which Semaphore
+# logs in plaintext in task history):
+#   INFISICAL_PROJECT_ID, INFISICAL_CLIENT_ID, INFISICAL_CLIENT_SECRET
+# (the same "AI-RDR Infisical (airdr-siem-agent)" machine identity already
+# used by every sibling credential playbook.)
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_threat_intel_cache.yml --limit airdr-siem:airdr-detect
+
+- name: Provision the threat-intel-cache-agent OpenSearch credential on airdr-siem
+  hosts: airdr-siem
+  become: true
+  gather_facts: false
+
+  vars:
+    wazuh_docker_dir: /opt/wazuh-docker/single-node
+    indexer_url: https://localhost:9200
+    infisical_address: "https://infisical.example.com"
+    infisical_env: "prod"
+    infisical_secret_path: "/threat-intel-credentials"
+    cache_role_name: threat_intel_cache_role
+    cache_user_name: threat-intel-cache-agent
+    cache_index_name: ai-rdr-threat-intel-cache
+    provision_script_path: /root/.provision_threat_intel_cache.sh
+
+  tasks:
+    - name: Fail fast if Infisical machine-identity credentials aren't set (Semaphore Environment extra-vars)
+      ansible.builtin.assert:
+        that:
+          - infisical_project_id_var is defined
+          - infisical_client_id_var is defined
+          - infisical_client_secret_var is defined
+        fail_msg: >-
+          INFISICAL_PROJECT_ID / INFISICAL_CLIENT_ID / INFISICAL_CLIENT_SECRET must be set via
+          this template's Semaphore Environment (Extra Variables) — never as -e/CLI args.
+      vars:
+        infisical_project_id_var: "{{ INFISICAL_PROJECT_ID | default(omit) }}"
+        infisical_client_id_var: "{{ INFISICAL_CLIENT_ID | default(omit) }}"
+        infisical_client_secret_var: "{{ INFISICAL_CLIENT_SECRET | default(omit) }}"
+
+    - name: Check the wazuh-docker single-node directory exists
+      ansible.builtin.stat:
+        path: "{{ wazuh_docker_dir }}/docker-compose.yml"
+      register: wazuh_compose_stat
+
+    - name: Fail if this host has no wazuh-docker deployment
+      ansible.builtin.fail:
+        msg: "{{ wazuh_docker_dir }}/docker-compose.yml not found — is this really airdr-siem?"
+      when: not wazuh_compose_stat.stat.exists
+
+    - name: Write the provisioning script (admin credential + new password never touch this playbook's own stdout/log)
+      ansible.builtin.copy:
+        dest: "{{ provision_script_path }}"
+        mode: "0700"
+        owner: root
+        group: root
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          # Debug aid: tee this script's own stdout/stderr to a root-only log
+          # file (overwritten each run, not appended - last run only) - safe
+          # because every line this script ever prints is either a status/
+          # http-code JSON summary or a bash error message, never a secret
+          # value (passwords/tokens only ever go into curl -u/-d args or
+          # -o-redirected response files, never echoed). Lets a failure be
+          # diagnosed without needing no_log: false on the Ansible task
+          # (which would put the admin password into Semaphore's own task
+          # history - not an acceptable tradeoff just for debugging).
+          exec > >(tee /root/.threat_intel_cache_debug.log) 2>&1
+
+          cd {{ wazuh_docker_dir }}
+          INDEXER_URL="{{ indexer_url }}"
+          ADMIN_PASS=$(grep -m1 'INDEXER_PASSWORD' docker-compose.yml | sed 's/.*=//')
+          ROLE="{{ cache_role_name }}"
+          USER="{{ cache_user_name }}"
+          CACHE_INDEX="{{ cache_index_name }}"
+
+          INFISICAL_ADDRESS="{{ infisical_address }}"
+          INFISICAL_ENV_SLUG="{{ infisical_env }}"
+          INFISICAL_SECRET_PATH="{{ infisical_secret_path }}"
+          INFISICAL_FOLDER_NAME="{{ infisical_secret_path | regex_replace('^/', '') }}"
+
+          : "${INFISICAL_PROJECT_ID:?missing}"
+          : "${INFISICAL_CLIENT_ID:?missing}"
+          : "${INFISICAL_CLIENT_SECRET:?missing}"
+
+          NEW_PASS=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | cut -c1-32)
+
+          # --- create the scoped role: read+write+create_index on
+          # ai-rdr-threat-intel-cache only, nothing else, no cluster_permissions ---
+          role_code=$(curl -sk -o /root/.threat_intel_cache_role_resp.log -w '%{http_code}' \
+            -X PUT "${INDEXER_URL}/_plugins/_security/api/roles/${ROLE}" \
+            -u "admin:${ADMIN_PASS}" -H 'Content-Type: application/json' \
+            -d '{
+              "cluster_permissions": [],
+              "index_permissions": [
+                {"index_patterns": ["'"${CACHE_INDEX}"'"], "allowed_actions": ["read", "write", "create_index"]}
+              ]
+            }')
+          if [ "$role_code" != "200" ] && [ "$role_code" != "201" ]; then
+            echo '{"status":"error","reason":"role create/update failed (http '"$role_code"') - see /root/.threat_intel_cache_role_resp.log"}'
+            exit 1
+          fi
+          rm -f /root/.threat_intel_cache_role_resp.log
+
+          # --- create the internal user, mapped to that role only ---
+          user_code=$(curl -sk -o /root/.threat_intel_cache_user_resp.log -w '%{http_code}' \
+            -X PUT "${INDEXER_URL}/_plugins/_security/api/internalusers/${USER}" \
+            -u "admin:${ADMIN_PASS}" -H 'Content-Type: application/json' \
+            -d "$(python3 -c 'import json,sys; print(json.dumps({"password": sys.argv[1], "opendistro_security_roles": [sys.argv[2]], "description": "Threat-intel cache - read+write+create_index on ai-rdr-threat-intel-cache only"}))' "$NEW_PASS" "$ROLE")")
+          if [ "$user_code" != "200" ] && [ "$user_code" != "201" ]; then
+            echo '{"status":"error","reason":"user create/update failed (http '"$user_code"') - see /root/.threat_intel_cache_user_resp.log","role_created":true}'
+            exit 1
+          fi
+          rm -f /root/.threat_intel_cache_user_resp.log
+
+          # --- verify: new user can write+read-back a test doc in
+          # ai-rdr-threat-intel-cache (create_index covers the index not
+          # existing yet), and is rejected for out-of-scope indices ---
+          write_check=$(curl -sk -o /dev/null -w '%{http_code}' -u "${USER}:${NEW_PASS}" \
+            -X PUT "${INDEXER_URL}/${CACHE_INDEX}/_doc/__credential_verification__" \
+            -H 'Content-Type: application/json' \
+            -d '{"ioc_type": "verification", "ioc_value": "__credential_verification__"}')
+          read_check=$(curl -sk -o /dev/null -w '%{http_code}' -u "${USER}:${NEW_PASS}" \
+            "${INDEXER_URL}/${CACHE_INDEX}/_doc/__credential_verification__")
+          scope_check_wazuh=$(curl -sk -o /dev/null -w '%{http_code}' -u "${USER}:${NEW_PASS}" "${INDEXER_URL}/wazuh-alerts-*/_search?size=0")
+          scope_check_kibana=$(curl -sk -o /dev/null -w '%{http_code}' -u "${USER}:${NEW_PASS}" "${INDEXER_URL}/.kibana/_search?size=0")
+
+          # clean up the verification doc - don't leave test data in the real cache index
+          curl -sk -o /dev/null -X DELETE -u "admin:${ADMIN_PASS}" "${INDEXER_URL}/${CACHE_INDEX}/_doc/__credential_verification__" || true
+
+          if [ "$write_check" != "200" ] && [ "$write_check" != "201" ]; then
+            echo '{"status":"error","reason":"new user cannot write to '"$CACHE_INDEX"' (http '"$write_check"') - scope is wrong"}'
+            exit 1
+          fi
+          if [ "$read_check" != "200" ]; then
+            echo '{"status":"error","reason":"new user cannot read back from '"$CACHE_INDEX"' (http '"$read_check"') - scope is wrong"}'
+            exit 1
+          fi
+          if [ "$scope_check_wazuh" = "200" ]; then
+            echo '{"status":"error","reason":"new user CAN read wazuh-alerts-* - role is too broad, not scoped correctly"}'
+            exit 1
+          fi
+          if [ "$scope_check_kibana" = "200" ]; then
+            echo '{"status":"error","reason":"new user CAN read .kibana - role is too broad, not scoped correctly"}'
+            exit 1
+          fi
+
+          # --- push to Infisical: read what's already at this path first (the
+          # VirusTotal key already lives here - setup_airdr_threat_intel_credential.yml),
+          # purely to confirm it's there and log that fact - it is deliberately NEVER
+          # included in the outgoing write body below. Confirmed live (2026-10-05): the
+          # batch/raw POST endpoint, when a batch mixes an already-existing key with new
+          # ones, responds 404 NotFound for the new keys instead of creating them (it
+          # appears to require the whole batch to already exist before it will treat it
+          # as an update, and a mixed create+update batch doesn't work at all). Sending
+          # ONLY the new keys sidesteps that entirely and is a strictly stronger guarantee
+          # against ever overwriting VIRUSTOTAL_API_KEY than re-sending it unchanged would
+          # have been - it is never touched by this script at all. ---
+          infisical_login() {
+            local resp token
+            resp=$(curl -s -X POST "${INFISICAL_ADDRESS}/api/v1/auth/universal-auth/login" \
+              -H "Content-Type: application/json" \
+              -d "$(python3 -c 'import json,sys; print(json.dumps({"clientId": sys.argv[1], "clientSecret": sys.argv[2]}))' "$INFISICAL_CLIENT_ID" "$INFISICAL_CLIENT_SECRET")" 2>/dev/null)
+            token=$(echo "$resp" | python3 -c 'import sys,json; print(json.load(sys.stdin)["accessToken"])' 2>/dev/null)
+            echo "$token"
+          }
+
+          access_token=$(infisical_login)
+          if [ -z "$access_token" ]; then
+            echo '{"status":"error","reason":"infisical universal-auth login failed - credential was NOT pushed (but is live on the indexer)"}'
+            exit 1
+          fi
+
+          set +e
+          curl -s -o /dev/null -X POST "${INFISICAL_ADDRESS}/api/v1/folders" \
+            -H "Authorization: Bearer ${access_token}" -H "Content-Type: application/json" \
+            -d "$(python3 -c 'import json,sys; print(json.dumps({"workspaceId": sys.argv[1], "environment": sys.argv[2], "name": sys.argv[3], "path": "/"}))' "$INFISICAL_PROJECT_ID" "$INFISICAL_ENV_SLUG" "$INFISICAL_FOLDER_NAME")"
+          set -e
+
+          existing_raw=$(curl -s -G "${INFISICAL_ADDRESS}/api/v3/secrets/raw" \
+            --data-urlencode "workspaceId=${INFISICAL_PROJECT_ID}" \
+            --data-urlencode "environment=${INFISICAL_ENV_SLUG}" \
+            --data-urlencode "secretPath=${INFISICAL_SECRET_PATH}" \
+            -H "Authorization: Bearer ${access_token}")
+
+          # Audit-only: what keys already live at this path (expected: VIRUSTOTAL_API_KEY).
+          # Never fed into the write below - see the long comment above.
+          existing_keys_csv=$(python3 -c '
+          import sys, json
+          try:
+              d = json.loads(sys.argv[1])
+              print(",".join(s["secretKey"] for s in d.get("secrets", [])))
+          except Exception:
+              print("")
+          ' "$existing_raw")
+
+          secrets_body=$(NEW_PASS="$NEW_PASS" EXISTING_RAW="$existing_raw" python3 - "$INFISICAL_SECRET_PATH" "$INFISICAL_ENV_SLUG" "$INFISICAL_PROJECT_ID" "$USER" <<'PYEOF'
+          import json
+          import os
+          import sys
+
+          secret_path, env_slug, project_id, user = sys.argv[1:5]
+
+          # Log (to stderr - this script's own stdout/stderr is teed to the
+          # root-only debug log, see exec> near the top; never printed by
+          # Ansible since the task is no_log: true) whether VIRUSTOTAL_API_KEY
+          # was already present, purely for audit - it is NOT included below.
+          try:
+              existing = json.loads(os.environ["EXISTING_RAW"])
+              existing_keys = [s["secretKey"] for s in existing.get("secrets", [])]
+          except Exception:
+              existing_keys = []
+          print(f"existing secrets at this path before this run: {existing_keys}", file=sys.stderr)
+
+          new_secrets = {
+              "THREAT_INTEL_OPENSEARCH_USER": user,
+              "THREAT_INTEL_OPENSEARCH_PASSWORD": os.environ["NEW_PASS"],
+              "THREAT_INTEL_OPENSEARCH_HOST": "192.168.70.62",
+              "THREAT_INTEL_OPENSEARCH_PORT": "9200",
+          }
+
+          body = {
+              "workspaceId": project_id,
+              "environment": env_slug,
+              "secretPath": secret_path,
+              "secrets": [{"secretKey": k, "secretValue": v} for k, v in new_secrets.items()],
+          }
+          print(json.dumps(body))
+          PYEOF
+          )
+
+          # POST creates (400 "Secret already exist" since VIRUSTOTAL_API_KEY is
+          # already at this path); PATCH updates in that case - same idempotency
+          # fix already applied to every sibling credential playbook.
+          http_code=$(curl -s -o /root/.threat_intel_cache_infisical_resp.log -w '%{http_code}' \
+            -X POST "${INFISICAL_ADDRESS}/api/v3/secrets/batch/raw" \
+            -H "Authorization: Bearer ${access_token}" \
+            -H "Content-Type: application/json" \
+            -d "$secrets_body")
+
+          if [ "$http_code" = "400" ] && grep -q 'Secret already exist' /root/.threat_intel_cache_infisical_resp.log; then
+            http_code=$(curl -s -o /root/.threat_intel_cache_infisical_resp.log -w '%{http_code}' \
+              -X PATCH "${INFISICAL_ADDRESS}/api/v3/secrets/batch/raw" \
+              -H "Authorization: Bearer ${access_token}" \
+              -H "Content-Type: application/json" \
+              -d "$secrets_body")
+          fi
+
+          if [ "$http_code" != "200" ]; then
+            echo '{"status":"error","reason":"infisical push failed (http '"$http_code"') - credential is live but NOT recorded - see /root/.threat_intel_cache_infisical_resp.log"}'
+            exit 1
+          fi
+          rm -f /root/.threat_intel_cache_infisical_resp.log
+          echo '{"status":"success","role":"'"$ROLE"'","user":"'"$USER"'","write_check_http":"'"$write_check"'","read_check_http":"'"$read_check"'","scope_check_wazuh_http":"'"$scope_check_wazuh"'","scope_check_kibana_http":"'"$scope_check_kibana"'","existing_secrets_at_path_before_this_run":"'"$existing_keys_csv"'"}'
+
+    - name: Provision the role+user and push the credential to Infisical
+      ansible.builtin.command: "bash {{ provision_script_path }}"
+      environment:
+        INFISICAL_PROJECT_ID: "{{ INFISICAL_PROJECT_ID }}"
+        INFISICAL_CLIENT_ID: "{{ INFISICAL_CLIENT_ID }}"
+        INFISICAL_CLIENT_SECRET: "{{ INFISICAL_CLIENT_SECRET }}"
+      register: provision_result
+      changed_when: "'\"status\":\"success\"' in provision_result.stdout"
+      no_log: true
+
+    - name: Fail loudly if provisioning failed
+      ansible.builtin.fail:
+        msg: "threat-intel-cache-agent provisioning failed: {{ provision_result.stdout }}"
+      when: "'\"status\":\"success\"' not in provision_result.stdout"
+
+    - name: Show what was granted (for audit)
+      ansible.builtin.debug:
+        msg:
+          cache_user: "{{ cache_user_name }}"
+          cache_role: "{{ cache_role_name }}"
+          scope: "read+write+create_index on {{ cache_index_name }} only — verified live (write+read-back succeeded, wazuh-alerts-*/.kibana access correctly denied)"
+          infisical_path: "{{ infisical_secret_path }}"
+
+- name: Fetch the threat-intel credentials into airdr-detect's env
+  hosts: airdr-detect
+  become: true
+  gather_facts: false
+
+  vars:
+    infisical_address: "https://infisical.example.com"
+    infisical_env: "prod"
+    infisical_secret_path: "/threat-intel-credentials"
+    airdr_dir: /opt/airdr-detect
+    threat_intel_env_path: "{{ airdr_dir }}/threat_intel.env"
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+
+  tasks:
+    - name: Fail fast if Infisical machine-identity credentials aren't set
+      ansible.builtin.assert:
+        that:
+          - infisical_project_id_var is defined
+          - infisical_client_id_var is defined
+          - infisical_client_secret_var is defined
+        fail_msg: >-
+          INFISICAL_PROJECT_ID / INFISICAL_CLIENT_ID / INFISICAL_CLIENT_SECRET must be set via
+          this template's Semaphore Environment (Extra Variables) — never as -e/CLI args.
+      vars:
+        infisical_project_id_var: "{{ INFISICAL_PROJECT_ID | default(omit) }}"
+        infisical_client_id_var: "{{ INFISICAL_CLIENT_ID | default(omit) }}"
+        infisical_client_secret_var: "{{ INFISICAL_CLIENT_SECRET | default(omit) }}"
+
+    - name: Write the Infisical fetch script (credentials never touch this playbook's own stdout/log)
+      ansible.builtin.copy:
+        dest: /root/.fetch_threat_intel_from_infisical.sh
+        mode: "0700"
+        owner: root
+        group: root
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          INFISICAL_ADDRESS="{{ infisical_address }}"
+          INFISICAL_ENV_SLUG="{{ infisical_env }}"
+          INFISICAL_SECRET_PATH="{{ infisical_secret_path }}"
+          DEST="{{ threat_intel_env_path }}"
+
+          : "${INFISICAL_PROJECT_ID:?missing}"
+          : "${INFISICAL_CLIENT_ID:?missing}"
+          : "${INFISICAL_CLIENT_SECRET:?missing}"
+
+          resp=$(curl -s -X POST "${INFISICAL_ADDRESS}/api/v1/auth/universal-auth/login" \
+            -H "Content-Type: application/json" \
+            -d "$(python3 -c 'import json,sys; print(json.dumps({"clientId": sys.argv[1], "clientSecret": sys.argv[2]}))' "$INFISICAL_CLIENT_ID" "$INFISICAL_CLIENT_SECRET")" 2>/dev/null)
+          access_token=$(echo "$resp" | python3 -c 'import sys,json; print(json.load(sys.stdin)["accessToken"])' 2>/dev/null)
+          if [ -z "$access_token" ]; then
+            echo '{"status":"error","reason":"infisical universal-auth login failed"}'
+            exit 1
+          fi
+
+          raw=$(curl -s -G "${INFISICAL_ADDRESS}/api/v3/secrets/raw" \
+            --data-urlencode "workspaceId=${INFISICAL_PROJECT_ID}" \
+            --data-urlencode "environment=${INFISICAL_ENV_SLUG}" \
+            --data-urlencode "secretPath=${INFISICAL_SECRET_PATH}" \
+            -H "Authorization: Bearer ${access_token}")
+
+          env_lines=$(echo "$raw" | python3 -c '
+          import sys, json
+          d = json.load(sys.stdin)
+          for s in d.get("secrets", []):
+              key = s["secretKey"]
+              value = s["secretValue"]
+              print(f"{key}={value}")
+          ')
+          if [ -z "$env_lines" ]; then
+            echo '{"status":"error","reason":"no secrets found at '"$INFISICAL_SECRET_PATH"'"}'
+            exit 1
+          fi
+
+          umask 077
+          printf '%s\n' "$env_lines" > "$DEST"
+          chmod 600 "$DEST"
+          chown {{ ssh_user }}:{{ ssh_user }} "$DEST"
+          echo '{"status":"success"}'
+
+    - name: Fetch the credentials and write them to the threat-intel env file
+      ansible.builtin.command: bash /root/.fetch_threat_intel_from_infisical.sh
+      environment:
+        INFISICAL_PROJECT_ID: "{{ INFISICAL_PROJECT_ID }}"
+        INFISICAL_CLIENT_ID: "{{ INFISICAL_CLIENT_ID }}"
+        INFISICAL_CLIENT_SECRET: "{{ INFISICAL_CLIENT_SECRET }}"
+      register: infisical_fetch_result
+      changed_when: "'\"status\":\"success\"' in infisical_fetch_result.stdout"
+      no_log: true
+
+    - name: Fail loudly if the Infisical fetch failed
+      ansible.builtin.fail:
+        msg: "Infisical fetch failed: {{ infisical_fetch_result.stdout }}"
+      when: "'\"status\":\"success\"' not in infisical_fetch_result.stdout"
+
+- name: Wire the real VirusTotal-backed threat-intel client into run_irdp.py
+  hosts: airdr-detect
+  become: true
+  gather_facts: false
+
+  vars:
+    airdr_dir: /opt/airdr-detect
+    venv_dir: "{{ airdr_dir }}/venv"
+    run_irdp_path: "{{ airdr_dir }}/run_irdp.py"
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+
+  tasks:
+    - name: Check threat_intel.env exists (previous play must have run first)
+      ansible.builtin.stat:
+        path: "{{ airdr_dir }}/threat_intel.env"
+      register: threat_intel_env_stat
+
+    - name: Fail if threat_intel.env is missing
+      ansible.builtin.fail:
+        msg: "{{ airdr_dir }}/threat_intel.env not found - the Infisical-fetch play above must run first."
+      when: not threat_intel_env_stat.stat.exists
+
+    - name: Read the current run_irdp.py (sanity check before overwriting it)
+      ansible.builtin.slurp:
+        path: "{{ run_irdp_path }}"
+      register: current_run_irdp
+
+    - name: Fail loudly if run_irdp.py doesn't look the way this task expects (avoid clobbering unrelated drift)
+      ansible.builtin.assert:
+        that:
+          # Idempotent across reruns: accept EITHER the pre-task-4.3b shape
+          # (first-time wiring, still has NullThreatIntelClient()) OR this
+          # task's own already-deployed shape (a rerun/rotation) - only a
+          # file that matches NEITHER is unexpected drift worth stopping for.
+          - >-
+            ('threat_intel_client=NullThreatIntelClient()' in (current_run_irdp.content | b64decode))
+            or ('_build_threat_intel_client()' in (current_run_irdp.content | b64decode))
+          - "'trigger_sender=HttpTriggerSender(base_url=ARM_BASE_URL)' in (current_run_irdp.content | b64decode)"
+        fail_msg: >-
+          run_irdp.py does not contain the expected NullThreatIntelClient/HttpTriggerSender
+          wiring from task 4.5, nor this task's own real-client wiring - refusing to overwrite
+          until this is checked by hand (the file has drifted further than this task accounts for).
+        success_msg: "run_irdp.py has an expected shape (task-4.5 or already-wired) - safe to (re)deploy."
+
+    - name: Deploy the updated IRDP polling entrypoint (real threat-intel client, degraded-mode-safe fallback)
+      ansible.builtin.copy:
+        dest: "{{ run_irdp_path }}"
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "0750"
+        content: |
+          #!/usr/bin/env python3
+          """
+          IRDP polling entrypoint - wraps backend.irdp.pipeline.run_once() in
+          a single invocation, meant to be called repeatedly by the
+          irdp-poll.timer systemd timer (setup_airdr_irdp_service.yml), not
+          run directly as a long-lived process (run_once() is deliberately
+          single-pass - see backend/irdp/__init__.py's package docstring).
+
+          Reads OpenSearch credentials from irdp.env (populated from
+          Infisical by setup_airdr_irdp_writer.yml) - never hardcoded here.
+          Uses FileCheckpointStore so a restart doesn't reprocess events
+          already written.
+
+          Risk Fusion wiring (task 4.5, risk-fusion-deployment-task.md):
+          HttpTriggerSender points at airdr-flask's own /api/arm/trigger,
+          verified bound on 0.0.0.0:5000 (ARM_BASE_URL below), same host.
+
+          Threat-intel wiring (task 4.3 Phase B,
+          threat-intel-deployment-spec.md Part 2): a real
+          CachedThreatIntelClient(RealVirusTotalClient,
+          OpenSearchThreatIntelCache) is built from threat_intel.env
+          (populated from Infisical's /threat-intel-credentials by
+          setup_airdr_threat_intel_cache.yml), with an explicit, logged
+          fallback to NullThreatIntelClient if VIRUSTOTAL_API_KEY is
+          missing/unset or threat_intel.env itself doesn't exist - this
+          entrypoint must never crash just because threat-intel enrichment
+          isn't configured (SRS AVAIL-1.2 degraded-mode requirement).
+          """
+          from __future__ import annotations
+
+          import logging
+          import os
+          import sys
+
+          sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+          from backend.irdp import (
+              FileCheckpointStore,
+              OpenSearchEventWriter,
+              RealWazuhEventSource,
+              run_once,
+          )
+          from backend.risk_fusion import (
+              CachedThreatIntelClient,
+              HttpTriggerSender,
+              NullThreatIntelClient,
+              OpenSearchThreatIntelCache,
+              RealVirusTotalClient,
+          )
+
+          logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+          log = logging.getLogger("irdp")
+
+          ENV_PATH = "{{ airdr_dir }}/irdp.env"
+          THREAT_INTEL_ENV_PATH = "{{ airdr_dir }}/threat_intel.env"
+          CHECKPOINT_PATH = "{{ airdr_dir }}/irdp_checkpoint.json"
+          ARM_BASE_URL = "http://localhost:5000"
+
+
+          def _load_env(path: str) -> dict:
+              env = {}
+              with open(path) as f:
+                  for line in f:
+                      line = line.strip()
+                      if not line or "=" not in line:
+                          continue
+                      key, value = line.split("=", 1)
+                      env[key] = value
+              return env
+
+
+          def _build_threat_intel_client():
+              if not os.path.exists(THREAT_INTEL_ENV_PATH):
+                  log.warning(
+                      "%s not found - falling back to NullThreatIntelClient", THREAT_INTEL_ENV_PATH
+                  )
+                  return NullThreatIntelClient()
+
+              ti_env = _load_env(THREAT_INTEL_ENV_PATH)
+              vt_key = ti_env.get("VIRUSTOTAL_API_KEY")
+              if not vt_key:
+                  log.warning("VIRUSTOTAL_API_KEY not set - falling back to NullThreatIntelClient")
+                  return NullThreatIntelClient()
+
+              real_client = RealVirusTotalClient(api_key=vt_key)
+              cache = OpenSearchThreatIntelCache(
+                  host=ti_env["THREAT_INTEL_OPENSEARCH_HOST"],
+                  username=ti_env["THREAT_INTEL_OPENSEARCH_USER"],
+                  password=ti_env["THREAT_INTEL_OPENSEARCH_PASSWORD"],
+                  port=int(ti_env["THREAT_INTEL_OPENSEARCH_PORT"]),
+              )
+              return CachedThreatIntelClient(real_client, cache)
+
+
+          def main() -> int:
+              env = _load_env(ENV_PATH)
+              host = env["IRDP_OPENSEARCH_HOST"]
+              user = env["IRDP_OPENSEARCH_USER"]
+              password = env["IRDP_OPENSEARCH_PASSWORD"]
+              port = int(env["IRDP_OPENSEARCH_PORT"])
+
+              source = RealWazuhEventSource(host=host, username=user, password=password, port=port)
+              writer = OpenSearchEventWriter(host=host, username=user, password=password, port=port)
+              checkpoint_store = FileCheckpointStore(CHECKPOINT_PATH)
+
+              summary = run_once(
+                  source,
+                  checkpoint_store,
+                  writer,
+                  threat_intel_client=_build_threat_intel_client(),
+                  trigger_sender=HttpTriggerSender(base_url=ARM_BASE_URL),
+              )
+              log.info("run_once summary: %s", summary)
+              return 0
+
+
+          if __name__ == "__main__":
+              sys.exit(main())
+
+    - name: Check ARM's health before restarting the timer
+      ansible.builtin.uri:
+        url: "http://localhost:5000/health"
+        status_code: 200
+      register: arm_health_before
+      changed_when: false
+
+    - name: Restart the IRDP poll timer
+      ansible.builtin.systemd:
+        name: irdp-poll.timer
+        state: restarted
+
+    - name: Run one poll immediately (don't wait for the first timer tick to find out if it's broken)
+      ansible.builtin.systemd:
+        name: irdp-poll.service
+        state: started
+
+    - name: Wait for the immediate run to finish
+      ansible.builtin.command: systemctl is-active irdp-poll.service
+      register: irdp_run_status
+      until: irdp_run_status.stdout != "activating"
+      retries: 10
+      delay: 2
+      changed_when: false
+      failed_when: false
+
+    - name: Show the immediate run's outcome
+      ansible.builtin.command: systemctl show irdp-poll.service -p Result -p ExecMainStatus
+      register: irdp_run_result
+      changed_when: false
+
+    - name: Fail if the immediate run didn't succeed
+      ansible.builtin.fail:
+        msg: "irdp-poll.service did not succeed: {{ irdp_run_result.stdout }}"
+      when: "'Result=success' not in irdp_run_result.stdout"
+
+    - name: Check ARM's health after restarting the timer
+      ansible.builtin.uri:
+        url: "http://localhost:5000/health"
+        status_code: 200
+      register: arm_health_after
+      changed_when: false
+
+    - name: Show recent journal output from the immediate run
+      ansible.builtin.command: journalctl -u irdp-poll.service -n 40 --no-pager
+      register: irdp_journal
+      changed_when: false
+
+    - name: Show verification info
+      ansible.builtin.debug:
+        msg:
+          arm_health_before: "{{ arm_health_before.json | default(arm_health_before.status) }}"
+          arm_health_after: "{{ arm_health_after.json | default(arm_health_after.status) }}"
+          irdp_run_result: "{{ irdp_run_result.stdout }}"
+          journal_tail: "{{ irdp_journal.stdout_lines }}"

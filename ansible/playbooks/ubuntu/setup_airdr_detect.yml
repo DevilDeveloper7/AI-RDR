@@ -1,0 +1,274 @@
+---
+# AI-RDR capstone project — detection/ML host. Sets up:
+#   - Python 3.10+ venv with scikit-learn, XGBoost, PyTorch (CPU-only build —
+#     no GPU passthrough on this VM; out of scope for this pass per the brief)
+#   - the real ARM (Automated Response Module) + IRDP backend — HostController
+#     abstraction, all 8 SDD action-catalogue actions, PB-01–PB-04,
+#     orchestrator with idempotency/rate-limiting/allow-list/approval-gating,
+#     Flask API, IRDP poll pipeline, Risk Fusion, PathPredict, threat-intel
+#     enrichment. Cloned directly from this project's own shared source-of-
+#     truth git repo (see `ai_rdr_backend_git_remote` below — replace with
+#     your own git host) rather than staged as a tarball, so a later
+#     `git pull` + service restart is the whole redeploy story.
+#   - Node.js 18 LTS + a minimal React 18 dashboard, built and served
+#
+# The backend's SSHHostController needs a dedicated, narrowly-scoped
+# `arm-executor` credential on airdr-target — see
+# setup_airdr_arm_executor.yml (run that first or after; order doesn't
+# matter, the flask service just won't be able to reach airdr-target until
+# both have run).
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_detect.yml --limit airdr-detect
+
+- name: Set up AI-RDR detection host (Python/ML venv, real ARM backend, Node/React)
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    airdr_dir: /opt/airdr-detect
+    venv_dir: "{{ airdr_dir }}/venv"
+    flask_port: 5000
+    dashboard_port: 3000
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+    # Shared source-of-truth repo for backend/, pipeline/, and models/registry/
+    # — replace with your own git host. A dedicated deploy key (read-only,
+    # scoped to this one repo) should be provisioned on this host separately,
+    # never the shared bootstrap key.
+    ai_rdr_backend_git_remote: "git@your-git-host:your-org/ai-rdr-backend.git"
+    ai_rdr_backend_git_ref: master
+    arm_executor_ssh_key_path: "{{ airdr_dir }}/.ssh/arm_executor_ed25519"
+    arm_opensearch_env_path: "{{ airdr_dir }}/arm_opensearch.env"
+
+  tasks:
+    - name: Install Python build deps + venv support
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-venv
+          - python3-pip
+          - build-essential
+        state: present
+        update_cache: true
+
+    - name: Ensure project directory exists
+      ansible.builtin.file:
+        path: "{{ airdr_dir }}"
+        state: directory
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "0755"
+
+    - name: Create Python venv
+      ansible.builtin.command: python3 -m venv {{ venv_dir }}
+      args:
+        creates: "{{ venv_dir }}/bin/activate"
+
+    - name: Install ML/backend Python packages into venv (CPU-only torch)
+      ansible.builtin.pip:
+        name:
+          - scikit-learn
+          - xgboost
+          - torch
+          - flask
+          - pandas
+          - numpy
+        virtualenv: "{{ venv_dir }}"
+        extra_args: "--extra-index-url https://download.pytorch.org/whl/cpu"
+
+    - name: Deploy the old placeholder Flask app under a different filename (kept, not deleted, just no longer run)
+      ansible.builtin.copy:
+        dest: "{{ airdr_dir }}/app_placeholder.py"
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "0644"
+        content: |
+          from flask import Flask, jsonify
+
+          app = Flask(__name__)
+
+
+          @app.get("/health")
+          def health():
+              return jsonify(status="ok", service="ai-rdr-detect")
+
+
+          @app.get("/api/detections")
+          def detections():
+              # Placeholder — real ML inference pipeline is the capstone's
+              # own future work, not provisioned by this playbook. Superseded
+              # by the real ARM backend below (backend/app.py) — kept here
+              # for reference/rollback, not started by airdr-flask.service
+              # any more.
+              return jsonify(detections=[])
+
+
+          if __name__ == "__main__":
+              app.run(host="0.0.0.0", port={{ flask_port }})
+
+    # --- Real ARM backend deploy: real git clone, not a tarball -----------
+
+    - name: Clone or update the AI-RDR backend repo
+      ansible.builtin.git:
+        repo: "{{ ai_rdr_backend_git_remote }}"
+        dest: "{{ airdr_dir }}"
+        version: "{{ ai_rdr_backend_git_ref }}"
+        accept_hostkey: true
+      become_user: "{{ ssh_user }}"
+
+    - name: Install the ARM backend's own requirements.txt into the venv (paramiko, proxmoxer, PyYAML, requests, pytest)
+      ansible.builtin.pip:
+        requirements: "{{ airdr_dir }}/backend/requirements.txt"
+        virtualenv: "{{ venv_dir }}"
+
+    - name: Ensure the ARM backend's SSH key directory exists (arm-executor's private key lands here — see setup_airdr_arm_executor.yml)
+      ansible.builtin.file:
+        path: "{{ airdr_dir }}/.ssh"
+        state: directory
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "0700"
+
+    - name: Write systemd unit to run the real ARM backend (backend/app.py) instead of the placeholder
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/airdr-flask.service
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=AI-RDR ARM backend (Flask) — real backend, see backend/*.py
+          After=network.target
+
+          [Service]
+          Type=simple
+          User={{ ssh_user }}
+          WorkingDirectory={{ airdr_dir }}
+          # arm-executor is a dedicated, narrowly-scoped SSH account on
+          # airdr-target (setup_airdr_arm_executor.yml) — never the shared
+          # ansible-user bootstrap key. The key file itself is not a secret
+          # baked in here: it's fetched from Infisical (project airdr, path
+          # /arm-executor-credentials) by that same playbook and only its
+          # non-secret path/username are referenced below.
+          Environment=AIRDR_SSH_USER=arm-executor
+          Environment=AIRDR_SSH_KEY_PATH={{ arm_executor_ssh_key_path }}
+          # AIRDR_OPENSEARCH_HOST/_USER/_PASSWORD/_PORT: a dedicated,
+          # narrowly-scoped OpenSearch credential (setup_airdr_arm_opensearch.yml,
+          # read+write on ai-rdr-arm-action-state* only) backing ARM's
+          # OpenSearchActionStore, so pending-approval/executed action state
+          # survives a process restart (InMemoryActionStore silently lost
+          # 3 queued records on 2026-09-29 - see arm-action-state-task.md).
+          # The "-" prefix means a fresh deploy before that credential
+          # playbook has run doesn't fail to start - ARM's own
+          # _default_action_store() falls back to InMemoryActionStore when
+          # these env vars are unset.
+          EnvironmentFile=-{{ arm_opensearch_env_path }}
+          ExecStart={{ venv_dir }}/bin/python -m backend.app
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable and start the ARM backend service
+      ansible.builtin.systemd:
+        name: airdr-flask
+        daemon_reload: true
+        enabled: true
+        state: restarted
+
+    - name: Purge the distro Node 12 stack (base apps playbook's npm package pulls it in; its dev-headers package file-conflicts with NodeSource's nodejs .deb)
+      ansible.builtin.apt:
+        name:
+          - npm
+          - nodejs
+          - libnode-dev
+          - libnode72
+        state: absent
+        purge: true
+        autoremove: true
+
+    - name: Install Node.js 18 LTS apt repo (NodeSource)
+      ansible.builtin.shell: curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+      args:
+        creates: /etc/apt/sources.list.d/nodesource.list
+
+    - name: Install Node.js 18 LTS from NodeSource
+      ansible.builtin.apt:
+        name: nodejs
+        state: present
+        update_cache: true
+
+    - name: Install serve (static file server for the built React app)
+      community.general.npm:
+        name: serve
+        global: true
+
+    - name: Check whether the React dashboard scaffold already exists
+      ansible.builtin.stat:
+        path: "{{ airdr_dir }}/dashboard/package.json"
+      register: dashboard_pkg_stat
+
+    - name: Scaffold minimal React 18 dashboard (create-react-app)
+      ansible.builtin.command: npx --yes create-react-app@5 dashboard
+      args:
+        chdir: "{{ airdr_dir }}"
+      become_user: "{{ ssh_user }}"
+      when: not dashboard_pkg_stat.stat.exists
+
+    - name: Build the React dashboard for production
+      ansible.builtin.command: npm run build
+      args:
+        chdir: "{{ airdr_dir }}/dashboard"
+      become_user: "{{ ssh_user }}"
+
+    - name: Write systemd unit to serve the built dashboard
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/airdr-dashboard.service
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=AI-RDR React dashboard (static build, served)
+          After=network.target
+
+          [Service]
+          Type=simple
+          User={{ ssh_user }}
+          WorkingDirectory={{ airdr_dir }}/dashboard
+          ExecStart=/usr/bin/npx --yes serve -s build -l {{ dashboard_port }}
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable and start dashboard service
+      ansible.builtin.systemd:
+        name: airdr-dashboard
+        daemon_reload: true
+        enabled: true
+        state: restarted
+
+    - name: Allow Flask backend port through UFW (LAN, no isolation this phase)
+      community.general.ufw:
+        rule: allow
+        port: "{{ flask_port | string }}"
+        proto: tcp
+        comment: "airdr-detect flask backend"
+
+    - name: Allow dashboard port through UFW
+      community.general.ufw:
+        rule: allow
+        port: "{{ dashboard_port | string }}"
+        proto: tcp
+        comment: "airdr-detect react dashboard"
+
+    - name: Show access info
+      ansible.builtin.debug:
+        msg:
+          - "ARM backend:     http://{{ ansible_host }}:{{ flask_port }}/health"
+          - "ARM trigger API: http://{{ ansible_host }}:{{ flask_port }}/api/arm/trigger"
+          - "React dashboard: http://{{ ansible_host }}:{{ dashboard_port }}"

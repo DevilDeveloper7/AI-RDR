@@ -1,0 +1,105 @@
+---
+- name: Basic server hardening
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+    user_home: "/home/{{ ssh_user }}"
+    ssh_dir: "{{ user_home }}/.ssh"
+
+  tasks:
+    # -----------------------------
+    # 1. Fail if the SSH user does not exist
+    # -----------------------------
+    - name: Fail if user home does not exist
+      stat:
+        path: "/home/{{ ssh_user }}"
+      register: home_check
+
+    - fail:
+        msg: "SSH user {{ ssh_user }} does not exist or home directory missing!"
+      when: not home_check.stat.exists
+
+    # -----------------------------
+    # 2. Harden SSH
+    # -----------------------------
+    - name: Backup sshd_config
+      copy:
+        src: /etc/ssh/sshd_config
+        dest: /etc/ssh/sshd_config.bak
+        remote_src: true
+
+    - block:
+        - name: Disable password authentication
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: '^#?PasswordAuthentication'
+            line: 'PasswordAuthentication no'
+            state: present
+
+        - name: Disable root login
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: '^#?PermitRootLogin'
+            line: 'PermitRootLogin no'
+            state: present
+
+        - name: Restart SSH service
+          systemd:
+            name: ssh
+            state: restarted
+      rescue:
+        - name: Restore sshd_config on failure
+          copy:
+            src: /etc/ssh/sshd_config.bak
+            dest: /etc/ssh/sshd_config
+            remote_src: true
+        - name: Restart SSH after rollback
+          systemd:
+            name: ssh
+            state: restarted
+        - fail:
+            msg: "SSH hardening failed. Config restored."
+
+    # -----------------------------
+    # 3. Update and upgrade packages
+    # -----------------------------
+    - name: Fix apt sources to use main mirror (avoid regional mirror failures)
+      replace:
+        path: /etc/apt/sources.list
+        regexp: 'http://[a-z]{2}\.archive\.ubuntu\.com'
+        replace: 'http://archive.ubuntu.com'
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+
+    # -----------------------------
+    # 4. Set basic firewall (UFW)
+    # -----------------------------
+    - name: Ensure UFW is installed
+      apt:
+        name: ufw
+        state: present
+
+    - name: Allow SSH through UFW
+      ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: Set default UFW policies
+      ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+    # -----------------------------
+    # 5. Fail2ban - installed and configured by setup_fail2ban.yml
+    # -----------------------------

@@ -1,0 +1,15 @@
+# ===============================
+# AI-RDR production phase — key-based automation user access.
+# Run with: ansible-playbook -i inventory/airdr/inventory.production.airdr.yml master/setup_airdr_production.yml
+# Only run after setup_airdr_bootstrap.yml has completed and
+# transition_verification.yml passed for every host.
+# ===============================
+
+- name: Production - Server hardening
+  import_playbook: ../playbooks/ubuntu/setup_server_base_protection.yml
+
+- name: Production - Install base applications (Docker, lazydocker, gdu, dysk, iperf3)
+  import_playbook: ../playbooks/ubuntu/setup_server_base_applications_installation.yml
+
+- name: Production - Configure fail2ban
+  import_playbook: ../playbooks/ubuntu/setup_fail2ban.yml

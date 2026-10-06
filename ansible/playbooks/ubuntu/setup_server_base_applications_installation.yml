@@ -1,0 +1,303 @@
+- name: Install server applications with rollback
+  become: true
+  hosts: all
+  gather_facts: true
+
+  vars:
+    lazydocker_version: "0.24.4"  # updated 2026-02-02
+    gdu_version: "5.32.0"          # updated 2026-03-16
+    lazydocker_archive: "/tmp/lazydocker.tar.gz"
+    lazydocker_bin_dir: "/usr/local/bin"
+    gdu_bin: "/usr/local/bin/gdu"
+    gdu_url: "https://github.com/dundee/gdu/releases/download/v{{ gdu_version }}/gdu_linux_amd64.tgz"
+    dysk_version: "3.6.0b"         # updated 2026-03-16
+    dysk_bin: "/usr/local/bin/dysk"
+    dysk_zip: "dysk_3.6.0.zip"
+    dysk_url: "https://github.com/Canop/dysk/releases/download/v{{ dysk_version }}/{{ dysk_zip }}"
+    iperf3_service: "/etc/systemd/system/iperf3-server.service"
+
+  pre_tasks:
+      - name: Set SSH user dynamically
+        set_fact:
+          ansible_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(ansible_user) }}"
+
+  tasks:
+    # -----------------------------
+    # 1. Install basic dependencies
+    # -----------------------------
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - unzip
+          - wget
+          - nano
+          - tree
+          - btop
+          - npm
+        state: present
+        update_cache: yes
+
+    # -----------------------------
+    # 2. Install Docker
+    # -----------------------------
+    - name: Create directory for Docker GPG key
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download Docker GPG key
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
+        state: present
+        filename: docker
+
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Ensure docker group exists
+      group:
+        name: docker
+        state: present
+
+    - name: Create docker_user if not exists
+      user:
+        name: docker_user
+        comment: "User for running containers"
+        groups: docker
+        append: yes
+        shell: /bin/bash
+        create_home: yes
+        state: present
+
+    - name: Add automation_user to docker group
+      user:
+        name: "{{ hostvars[inventory_hostname]['ssh_user'] | default(ansible_user) }}"
+        groups: docker
+        append: yes
+
+    - name: Ensure docker service is running
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    # -----------------------------
+    # 3. Install Lazydocker with rollback
+    # -----------------------------
+    - name: Check if Lazydocker already exists
+      stat:
+        path: "{{ lazydocker_bin_dir }}/lazydocker"
+      register: lazydocker_stat
+
+    - block:
+        - name: Download Lazydocker archive
+          get_url:
+            url: "https://github.com/jesseduffield/lazydocker/releases/download/v{{ lazydocker_version }}/lazydocker_{{ lazydocker_version }}_Linux_x86_64.tar.gz"
+            dest: "{{ lazydocker_archive }}"
+            mode: '0644'
+
+        - name: Extract Lazydocker
+          unarchive:
+            src: "{{ lazydocker_archive }}"
+            dest: "{{ lazydocker_bin_dir }}"
+            remote_src: yes
+            mode: '0755'
+
+      when: not lazydocker_stat.stat.exists
+      rescue:
+        - name: Remove Lazydocker binary if extraction failed
+          file:
+            path: "{{ lazydocker_bin_dir }}/lazydocker"
+            state: absent
+
+        - name: Remove Lazydocker archive
+          file:
+            path: "{{ lazydocker_archive }}"
+            state: absent
+
+        - fail:
+            msg: "Lazydocker installation failed and rolled back."
+
+      always:
+        - name: Cleanup Lazydocker archive
+          file:
+            path: "{{ lazydocker_archive }}"
+            state: absent
+
+    # -----------------------------
+    # 4. Install gdu and dysk
+    # -----------------------------
+    - name: Check if gdu already exists
+      stat:
+        path: "{{ gdu_bin }}"
+      register: gdu_stat
+
+    - block:
+        - name: Backup existing gdu if present
+          copy:
+            src: "{{ gdu_bin }}"
+            dest: "{{ gdu_bin }}.bak"
+            remote_src: true
+          when: gdu_stat.stat.exists
+          ignore_errors: yes
+
+        - name: Download and extract gdu
+          unarchive:
+            src: "{{ gdu_url }}"
+            dest: /usr/local/bin
+            remote_src: yes
+            mode: '0755'
+
+      when: not gdu_stat.stat.exists
+      rescue:
+        - name: Restore previous gdu if backup exists
+          copy:
+            src: "{{ gdu_bin }}.bak"
+            dest: "{{ gdu_bin }}"
+            remote_src: true
+          when: gdu_stat.stat.exists
+
+        - name: Remove gdu if no backup
+          file:
+            path: "{{ gdu_bin }}"
+            state: absent
+          when: not gdu_stat.stat.exists
+
+        - fail:
+            msg: "Failed to install gdu. Rollback done."
+
+    - name: Check if dysk already exists
+      stat:
+        path: "{{ dysk_bin }}"
+      register: dysk_stat
+
+    - block:
+        - name: Backup existing dysk if present
+          copy:
+            src: "{{ dysk_bin }}"
+            dest: "{{ dysk_bin }}.bak"
+            remote_src: true
+          when: dysk_stat.stat.exists
+          ignore_errors: yes
+
+        - name: Download dysk zip
+          get_url:
+            url: "{{ dysk_url }}"
+            dest: "/tmp/{{ dysk_zip }}"
+            mode: '0644'
+
+        - name: Extract dysk binary from zip
+          unarchive:
+            src: "/tmp/{{ dysk_zip }}"
+            dest: "/tmp"
+            remote_src: true
+            include:
+              - "build/x86_64-unknown-linux-gnu/dysk"
+
+        - name: Install dysk binary
+          copy:
+            src: "/tmp/build/x86_64-unknown-linux-gnu/dysk"
+            dest: "{{ dysk_bin }}"
+            mode: '0755'
+            remote_src: true
+
+        - name: Clean up dysk zip and extracted files
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "/tmp/{{ dysk_zip }}"
+            - "/tmp/build"
+
+      when: not dysk_stat.stat.exists
+      rescue:
+        - name: Restore previous dysk if backup exists
+          copy:
+            src: "{{ dysk_bin }}.bak"
+            dest: "{{ dysk_bin }}"
+            remote_src: true
+          when: dysk_stat.stat.exists
+
+        - name: Remove dysk if no backup
+          file:
+            path: "{{ dysk_bin }}"
+            state: absent
+          when: not dysk_stat.stat.exists
+
+        - fail:
+            msg: "Failed to install dysk. Rollback done."
+
+    - name: Display installation summary
+      debug:
+        msg:
+          - "✅ gdu installed via binary"
+          - "✅ dysk version: {{ dysk_check.stdout | default('unknown') }}"
+
+    # -----------------------------
+    # 5. Install iperf3 with systemd service
+    # -----------------------------
+    - block:
+        - name: Install iperf3
+          apt:
+            name: iperf3
+            state: present
+
+        - name: Create iperf3 server systemd service
+          copy:
+            dest: "{{ iperf3_service }}"
+            content: |
+              [Unit]
+              Description=iperf3 server
+              After=network.target
+
+              [Service]
+              ExecStart=/usr/bin/iperf3 -s
+              Restart=always
+
+              [Install]
+              WantedBy=multi-user.target
+            mode: '0644'
+
+        - name: Reload systemd and enable iperf3 service
+          systemd:
+            daemon_reload: yes
+            name: iperf3-server
+            state: started
+            enabled: true
+
+      rescue:
+        - name: Stop and disable iperf3 service on failure
+          systemd:
+            name: iperf3-server
+            state: stopped
+            enabled: false
+          ignore_errors: yes
+
+        - name: Remove iperf3 systemd service file
+          file:
+            path: "{{ iperf3_service }}"
+            state: absent
+          ignore_errors: yes
+
+        - fail:
+            msg: "iperf3 installation or service setup failed and rolled back."

@@ -1,0 +1,177 @@
+---
+- name: Create personal management user (night-devops) and configure SSH
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    personal_user: "night-devops"
+    personal_user_home: "/home/night-devops"
+    devops_key_name: "{{ hostvars[inventory_hostname]['devops_key_name'] }}"
+    ssh_key_dir: "{{ lookup('env','HOME') }}/.ssh"
+    devops_pubkey_path: "{{ ssh_key_dir }}/id_{{ devops_key_name }}.pub"
+    bashrc_file: "{{ personal_user_home }}/.bashrc"
+    bashrc_backup: "{{ personal_user_home }}/.bashrc.bak"
+    sudoers_file: "/etc/sudoers.d/night-devops"
+    sudoers_backup: "/etc/sudoers.d/night-devops.bak"
+
+  tasks:
+    # ───────────────────────────────────────────────
+    # Section: Generate devops SSH key locally
+    # ───────────────────────────────────────────────
+    - name: Ensure local .ssh directory exists
+      delegate_to: localhost
+      become: false
+      file:
+        path: "{{ ssh_key_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Check if devops SSH key exists locally
+      delegate_to: localhost
+      become: false
+      stat:
+        path: "{{ ssh_key_dir }}/id_{{ devops_key_name }}"
+      register: devops_key_check
+
+    - name: Generate devops SSH key locally if not exists
+      delegate_to: localhost
+      become: false
+      ansible.builtin.openssh_keypair:
+        path: "{{ ssh_key_dir }}/id_{{ devops_key_name }}"
+        type: rsa
+        size: 4096
+        state: present
+        mode: '0600'
+      when: not devops_key_check.stat.exists
+
+    # ───────────────────────────────────────────────
+    # Section: Create night-devops user on remote
+    # ───────────────────────────────────────────────
+    - name: Ensure night-devops user exists
+      user:
+        name: "{{ personal_user }}"
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: Ensure .ssh directory exists for night-devops
+      file:
+        path: "{{ personal_user_home }}/.ssh"
+        state: directory
+        owner: "{{ personal_user }}"
+        group: "{{ personal_user }}"
+        mode: '0700'
+
+    - name: Check if .bashrc exists for night-devops
+      stat:
+        path: "{{ bashrc_file }}"
+      register: bashrc_check
+
+    - name: Backup .bashrc if it exists
+      copy:
+        src: "{{ bashrc_file }}"
+        dest: "{{ bashrc_backup }}"
+        remote_src: true
+      when: bashrc_check.stat.exists
+      ignore_errors: yes
+
+    - block:
+        - name: Set default terminal for night-devops
+          lineinfile:
+            path: "{{ bashrc_file }}"
+            line: 'export TERM=xterm'
+            create: yes
+            owner: "{{ personal_user }}"
+            group: "{{ personal_user }}"
+            mode: '0644'
+
+      rescue:
+        - name: Check if .bashrc backup exists
+          stat:
+            path: "{{ bashrc_backup }}"
+          register: bashrc_backup_check
+
+        - name: Restore original .bashrc on failure
+          copy:
+            src: "{{ bashrc_backup }}"
+            dest: "{{ bashrc_file }}"
+            remote_src: true
+          when: bashrc_backup_check.stat.exists
+
+        - name: Remove new .bashrc if backup did not exist
+          file:
+            path: "{{ bashrc_file }}"
+            state: absent
+          when: not bashrc_backup_check.stat.exists
+
+        - fail:
+            msg: "Failed to modify .bashrc for night-devops. Changes rolled back."
+
+    # ───────────────────────────────────────────────
+    # Section: Sudo for night-devops
+    # ───────────────────────────────────────────────
+    - name: Check if sudoers file for night-devops exists
+      stat:
+        path: "{{ sudoers_file }}"
+      register: sudoers_check
+
+    - name: Backup existing sudoers file if it exists
+      copy:
+        src: "{{ sudoers_file }}"
+        dest: "{{ sudoers_backup }}"
+        remote_src: true
+      when: sudoers_check.stat.exists
+      ignore_errors: yes
+
+    - block:
+        - name: Configure passwordless sudo for night-devops
+          copy:
+            content: "night-devops ALL=(ALL) NOPASSWD:ALL\n"
+            dest: "{{ sudoers_file }}"
+            owner: root
+            group: root
+            mode: '0440'
+
+      rescue:
+        - name: Check if sudoers backup exists
+          stat:
+            path: "{{ sudoers_backup }}"
+          register: sudoers_backup_check
+
+        - name: Restore sudoers backup on failure
+          copy:
+            src: "{{ sudoers_backup }}"
+            dest: "{{ sudoers_file }}"
+            remote_src: true
+          when: sudoers_backup_check.stat.exists
+
+        - name: Remove sudoers file if no backup existed
+          file:
+            path: "{{ sudoers_file }}"
+            state: absent
+          when: not sudoers_backup_check.stat.exists
+
+        - fail:
+            msg: "Failed to configure sudo for night-devops. Changes rolled back."
+
+    # ───────────────────────────────────────────────
+    # Section: Upload devops SSH key
+    # ───────────────────────────────────────────────
+    - name: Upload devops authorized key
+      authorized_key:
+        user: "{{ personal_user }}"
+        key: "{{ lookup('file', devops_pubkey_path) }}"
+        state: present
+
+    # ───────────────────────────────────────────────
+    # Summary
+    # ───────────────────────────────────────────────
+    - name: Display configuration summary
+      debug:
+        msg:
+          - "Personal user configuration complete"
+          - "User: {{ personal_user }}"
+          - "Home: {{ personal_user_home }}"
+          - "Devops key name: {{ devops_key_name }}"
+          - "SSH public key uploaded: {{ devops_pubkey_path }}"
+          - "Passwordless sudo: configured (/etc/sudoers.d/night-devops)"

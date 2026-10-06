@@ -1,0 +1,152 @@
+---
+# AI-RDR capstone project — Wazuh Manager + Indexer (OpenSearch) + Dashboard,
+# deployed via the official Wazuh single-node docker-compose stack
+# (https://github.com/wazuh/wazuh-docker, pinned tag), rather than hand-rolling
+# a compose file from scratch — this is the vendor-documented, reliable way to
+# stand up manager+indexer+dashboard together. MITRE ATT&CK detection mapping
+# ships built into Wazuh's default ruleset (rules carry <mitre> tags out of
+# the box) — no separate "enable MITRE" step exists or is needed.
+#
+# Test/demo environment: uses the upstream repo's documented default indexer
+# credentials (admin/SecretPassword) rather than inventing/storing a secret —
+# rotate via Infisical (see inventory/airdr/inventory.production.airdr.yml
+# header) before this is ever treated as more than a demo.
+#
+# Requires Docker already installed (setup_server_base_applications_installation.yml,
+# part of master/setup_airdr_production.yml, runs first).
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_wazuh_manager.yml --limit airdr-siem
+
+- name: Deploy Wazuh Manager + Indexer + Dashboard (single-node)
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    wazuh_docker_version: "4.9.2"
+    wazuh_docker_dir: /opt/wazuh-docker
+    wazuh_indexer_user: admin
+    wazuh_indexer_pass: SecretPassword
+    airdr_index_patterns:
+      - ai-rdr-raw-wazuh-logs
+      - ai-rdr-fs-events
+      - ai-rdr-normalized-events
+      - ai-rdr-ml-detections
+      - ai-rdr-threat-intel
+      - ai-rdr-response-audit
+      - ai-rdr-incident-cases
+
+  tasks:
+    - name: Check if Docker daemon is running
+      ansible.builtin.stat:
+        path: /var/run/docker.sock
+      register: docker_sock_stat
+
+    - name: Fail if Docker is not running
+      ansible.builtin.fail:
+        msg: "Docker is not running on this host. Run master/setup_airdr_production.yml first."
+      when: not docker_sock_stat.stat.exists
+
+    - name: Set vm.max_map_count for OpenSearch (required, persistent)
+      ansible.posix.sysctl:
+        name: vm.max_map_count
+        value: "262144"
+        sysctl_set: true
+        state: present
+        reload: true
+
+    - name: Install git (not part of the base applications playbook)
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+    - name: Check if wazuh-docker repo is already cloned
+      ansible.builtin.stat:
+        path: "{{ wazuh_docker_dir }}/.git"
+      register: wazuh_repo_stat
+
+    - name: Clone wazuh-docker at pinned release tag
+      ansible.builtin.git:
+        repo: https://github.com/wazuh/wazuh-docker.git
+        dest: "{{ wazuh_docker_dir }}"
+        version: "v{{ wazuh_docker_version }}"
+        depth: 1
+      when: not wazuh_repo_stat.stat.exists
+
+    - name: Check whether indexer TLS certs already exist
+      ansible.builtin.stat:
+        path: "{{ wazuh_docker_dir }}/single-node/config/wazuh_indexer_ssl_certs/root-ca.pem"
+      register: wazuh_certs_stat
+
+    - name: Generate indexer TLS certs (one-time)
+      ansible.builtin.command: docker compose -f generate-indexer-certs.yml run --rm generator
+      args:
+        chdir: "{{ wazuh_docker_dir }}/single-node"
+      when: not wazuh_certs_stat.stat.exists
+
+    - name: Start Wazuh stack (manager, indexer, dashboard)
+      ansible.builtin.command: docker compose up -d
+      args:
+        chdir: "{{ wazuh_docker_dir }}/single-node"
+      register: wazuh_up
+      changed_when: "'Started' in wazuh_up.stderr or 'Created' in wazuh_up.stderr or 'Running' in wazuh_up.stderr"
+
+    - name: Wait for indexer API to respond (OpenSearch takes a few minutes on first boot)
+      ansible.builtin.uri:
+        url: "https://localhost:9200"
+        method: GET
+        user: "{{ wazuh_indexer_user }}"
+        password: "{{ wazuh_indexer_pass }}"
+        validate_certs: false
+        force_basic_auth: true
+        status_code: 200
+      register: indexer_health
+      until: indexer_health.status == 200
+      retries: 30
+      delay: 15
+
+    - name: Create AI-RDR index templates (7 index patterns, empty mapping — data pipeline fills these in later)
+      ansible.builtin.uri:
+        url: "https://localhost:9200/_index_template/{{ item }}"
+        method: PUT
+        user: "{{ wazuh_indexer_user }}"
+        password: "{{ wazuh_indexer_pass }}"
+        validate_certs: false
+        force_basic_auth: true
+        body_format: json
+        body:
+          index_patterns:
+            - "{{ item }}-*"
+          template:
+            settings:
+              number_of_shards: 1
+              number_of_replicas: 0
+        status_code: [200, 201]
+      loop: "{{ airdr_index_patterns }}"
+      loop_control:
+        label: "{{ item }}-*"
+
+    - name: Open Wazuh manager agent-enrollment/event ports to the flat LAN (test/demo, no network isolation this phase)
+      community.general.ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+        comment: "wazuh manager - agent enrollment/events"
+      loop:
+        - "1514"
+        - "1515"
+
+    - name: Open Wazuh dashboard port
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+        comment: "wazuh dashboard"
+
+    - name: Show access info
+      ansible.builtin.debug:
+        msg:
+          - "Wazuh dashboard: https://{{ ansible_host }}/  (user: {{ wazuh_indexer_user }})"
+          - "Agent enrollment port 1515, event port 1514 open to the LAN"
+          - "7 ai-rdr-* index templates created on the indexer"

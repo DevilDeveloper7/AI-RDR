@@ -1,0 +1,58 @@
+- name: Configure automation user with passwordless sudo
+  hosts: all
+  become: true
+  vars:
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default('test_user') }}"
+    sudoers_file: "/etc/sudoers.d/{{ ssh_user }}"
+    sudoers_backup: "/etc/sudoers.d/{{ ssh_user }}.bak"
+
+  tasks:
+    - name: Ensure sudo is installed
+      apt:
+        name: sudo
+        state: present
+        update_cache: yes
+
+    # ───────────────────────────────────────────────
+    # Check for existing sudoers file
+    # ───────────────────────────────────────────────
+    - name: Check if sudoers file exists
+      stat:
+        path: "{{ sudoers_file }}"
+      register: sudoers_check
+
+    - name: Backup existing sudoers file if present
+      copy:
+        src: "{{ sudoers_file }}"
+        dest: "{{ sudoers_backup }}"
+        remote_src: true
+      when: sudoers_check.stat.exists
+      ignore_errors: yes
+
+    # ───────────────────────────────────────────────
+    # Apply passwordless sudo configuration
+    # ───────────────────────────────────────────────
+    - block:
+        - name: Configure passwordless sudo for automation user
+          copy:
+            dest: "{{ sudoers_file }}"
+            content: "{{ ssh_user }} ALL=(ALL) NOPASSWD:ALL"
+            owner: root
+            group: root
+            mode: '0440'
+
+      rescue:
+        - name: Check if backup exists
+          stat:
+            path: "{{ sudoers_backup }}"
+          register: sudoers_backup_check
+
+        - name: Restore sudoers file if configuration failed
+          copy:
+            src: "{{ sudoers_backup }}"
+            dest: "{{ sudoers_file }}"
+            remote_src: true
+          when: sudoers_backup_check.stat.exists
+
+        - fail:
+            msg: "Failed to configure passwordless sudo. Rollback applied."

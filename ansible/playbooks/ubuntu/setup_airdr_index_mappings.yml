@@ -1,0 +1,230 @@
+---
+# AI-RDR capstone project — applies real field mappings to the ai-rdr-*
+# index templates (irdp-deployment-task.md 2026-09-29, extended by
+# arm-action-state-task.md 2026-09-29). Idempotent PUT (create-or-update),
+# verified via a follow-up GET, not just trusting the PUT's HTTP status -
+# same pattern as set_wazuh_indexer_retention_policy.yml.
+#
+# Covers all 8 ai-rdr-* indices now:
+#   - The 3 IRDP actually writes to (ai-rdr-raw-wazuh-logs-*,
+#     ai-rdr-fs-events-*, ai-rdr-normalized-events-*) - field types lifted
+#     directly from backend/irdp/normalize.py's own document-builder
+#     functions, not guessed.
+#   - The 4 originally left settings-only (ai-rdr-ml-detections-*,
+#     ai-rdr-threat-intel-*, ai-rdr-response-audit-*,
+#     ai-rdr-incident-cases-*) - field types re-extracted from the SDD's
+#     Data Dictionary directly (arm-action-state-task.md), with a handful
+#     of explicitly-disclosed judgment calls where the SDD itself never
+#     types a field (each marked in a comment below).
+#   - `ai-rdr-arm-action-state` - a NEW 8th index, not one of the SDD's
+#     original 7 (see backend/arm.py's OpenSearchActionStore docstring for
+#     the full reasoning - it's ARM's mutable current-state store, deliberately
+#     separate from ai-rdr-response-audit-*'s immutable append-only log).
+#     This one doesn't exist as a template at all yet, unlike the other 7 -
+#     created fresh here, not just given mappings.
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_index_mappings.yml --limit airdr-siem
+
+- name: Apply real field mappings to the ai-rdr-* index templates
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    wazuh_docker_dir: /opt/wazuh-docker/single-node
+    indexer_url: https://localhost:9200
+    default_settings:
+      index:
+        number_of_shards: "1"
+        number_of_replicas: "0"
+    templates:
+      - name: ai-rdr-raw-wazuh-logs
+        index_patterns: ["ai-rdr-raw-wazuh-logs-*"]
+        properties:
+          "@timestamp": { type: date }
+          agent_id: { type: keyword }
+          host_name: { type: keyword }
+          rule_id: { type: keyword }
+          mitre_technique: { type: keyword }
+          process_name: { type: keyword }
+          src_ip: { type: ip }
+          dest_ip: { type: ip }
+          raw_message: { type: text }
+      - name: ai-rdr-fs-events
+        index_patterns: ["ai-rdr-fs-events-*"]
+        properties:
+          "@timestamp": { type: date }
+          event_id: { type: keyword }
+          host_id: { type: keyword }
+          event_mask: { type: keyword } # per-event STRING label (e.g. "IN_ACCESS") - Correction 1, see normalize.py
+          file_path: { type: keyword }
+          process_id: { type: integer }
+          user_id: { type: keyword }
+          honey_file_triggered: { type: boolean }
+      - name: ai-rdr-normalized-events
+        index_patterns: ["ai-rdr-normalized-events-*"]
+        properties:
+          "@timestamp": { type: date }
+          event_id: { type: keyword }
+          correlation_id: { type: keyword }
+          event_type: { type: keyword }
+          host_id: { type: keyword }
+          entity_id: { type: keyword }
+          entropy_score: { type: float }
+          anomaly_score: { type: float }
+          confidence_level: { type: float }
+          severity: { type: keyword }
+          response_status: { type: keyword }
+          event_mask: { type: integer } # ML-facing INTEGER bitmask - Correction 2, see normalize.py. Different field, same name, from fs-events' string version above.
+          honey_file_triggered: { type: boolean }
+      - name: ai-rdr-ml-detections
+        index_patterns: ["ai-rdr-ml-detections-*"]
+        properties:
+          model_version: { type: keyword }
+          feature_window_seconds: { type: integer }
+          encryption_rate: { type: float }
+          anomaly_score: { type: float }
+          confidence_level: { type: keyword }
+          predicted_label: { type: keyword } # judgment call - SDD never types this one, obviously a label field
+      - name: ai-rdr-threat-intel
+        index_patterns: ["ai-rdr-threat-intel-*"]
+        properties:
+          ioc_value: { type: keyword }
+          ioc_type: { type: keyword }
+          xforce_score: { type: float }
+          malware_family: { type: keyword }
+          threat_category: { type: keyword }
+          lookup_status: { type: keyword }
+          cache_expiry: { type: date } # judgment call - SDD never types this one, "expiry" implies a timestamp
+      - name: ai-rdr-response-audit
+        index_patterns: ["ai-rdr-response-audit-*"]
+        properties:
+          playbook_id: { type: keyword }
+          action_status: { type: keyword }
+          action_id: { type: keyword } # judgment call, below - none of these 5 are typed in the SDD
+          action_type: { type: keyword }
+          target_entity: { type: keyword }
+          executed_by: { type: keyword }
+          rollback_status: { type: keyword }
+      - name: ai-rdr-incident-cases
+        index_patterns: ["ai-rdr-incident-cases-*"]
+        properties:
+          case_id: { type: keyword }
+          risk_score: { type: float }
+          case_state: { type: keyword } # judgment call, below
+          owner: { type: keyword }
+          predicted_targets: { type: keyword } # array of keyword - OpenSearch has no separate array type, any field accepts multiple values natively
+          actions_taken: { type: keyword }
+          recommendations: { type: text } # judgment call - SDD describes this as free-form analyst-facing text, not a label
+      - name: ai-rdr-arm-action-state
+        index_patterns: ["ai-rdr-arm-action-state*"]
+        properties:
+          action_id: { type: keyword }
+          playbook_id: { type: keyword }
+          playbook_name: { type: keyword }
+          entity: { type: keyword }
+          host: { type: keyword }
+          status: { type: keyword }
+          created_at: { type: date }
+          executed_at: { type: date }
+          undone_at: { type: date }
+          trigger_timestamp: { type: date }
+          allow_listed: { type: boolean }
+          results: { type: object }
+          undo_results: { type: object }
+          trigger: { type: object }
+
+  tasks:
+    - name: Check the wazuh-docker single-node deployment exists
+      ansible.builtin.stat:
+        path: "{{ wazuh_docker_dir }}/docker-compose.yml"
+      register: wazuh_compose_stat
+
+    - name: Fail if this host has no wazuh-docker deployment
+      ansible.builtin.fail:
+        msg: "{{ wazuh_docker_dir }}/docker-compose.yml not found — is this really airdr-siem?"
+      when: not wazuh_compose_stat.stat.exists
+
+    - name: Read the indexer admin password directly off docker-compose.yml (never logged)
+      ansible.builtin.shell: grep -m1 'INDEXER_PASSWORD' {{ wazuh_docker_dir }}/docker-compose.yml | sed 's/.*=//'
+      args:
+        chdir: "{{ wazuh_docker_dir }}"
+      register: indexer_admin_pass
+      changed_when: false
+      no_log: true
+
+    - name: Fetch the current index template (to preserve its existing settings block)
+      ansible.builtin.uri:
+        url: "{{ indexer_url }}/_index_template/{{ item.name }}"
+        method: GET
+        user: admin
+        password: "{{ indexer_admin_pass.stdout }}"
+        validate_certs: false
+        force_basic_auth: true
+        status_code: [200, 404]
+      loop: "{{ templates }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: current_templates
+      no_log: true
+
+    - name: Show which templates are being created fresh vs updated in place
+      ansible.builtin.debug:
+        msg: "{{ item.item.name }}: {{ 'CREATE (new template)' if item.status == 404 else 'UPDATE (preserving existing settings)' }}"
+      loop: "{{ current_templates.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: PUT the template with field mappings added - existing settings preserved when updating, sane defaults when creating fresh
+      ansible.builtin.uri:
+        url: "{{ indexer_url }}/_index_template/{{ item.item.name }}"
+        method: PUT
+        user: admin
+        password: "{{ indexer_admin_pass.stdout }}"
+        validate_certs: false
+        force_basic_auth: true
+        status_code: [200]
+        body_format: json
+        body:
+          index_patterns: "{{ item.item.index_patterns }}"
+          template:
+            settings: "{{ item.json.index_templates[0].index_template.template.settings | default(default_settings) }}"
+            mappings:
+              properties: "{{ item.item.properties }}"
+      loop: "{{ current_templates.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      register: put_results
+
+    - name: Verify each template now has the expected mappings (GET, not just trust the PUT status)
+      ansible.builtin.uri:
+        url: "{{ indexer_url }}/_index_template/{{ item.name }}"
+        method: GET
+        user: admin
+        password: "{{ indexer_admin_pass.stdout }}"
+        validate_certs: false
+        force_basic_auth: true
+        status_code: [200]
+      loop: "{{ templates }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: verify_results
+      no_log: true
+
+    - name: Show verification (field count per template - confirms mappings actually landed)
+      ansible.builtin.debug:
+        msg: "{{ item.item.name }}: {{ item.json.index_templates[0].index_template.template.mappings.properties.keys() | list }}"
+      loop: "{{ verify_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Fail if any template is missing its expected properties after the PUT
+      ansible.builtin.fail:
+        msg: "{{ item.0.name }} is missing mapped fields after PUT - expected {{ item.0.properties.keys() | list }}, got {{ item.1.json.index_templates[0].index_template.template.mappings.properties.keys() | default([]) | list }}"
+      loop: "{{ templates | zip(verify_results.results) | list }}"
+      loop_control:
+        label: "{{ item.0.name }}"
+      when: >-
+        (item.0.properties.keys() | list | sort) !=
+        (item.1.json.index_templates[0].index_template.template.mappings.properties.keys() | default([]) | list | sort)

@@ -1,0 +1,336 @@
+---
+# AI-RDR capstone project — provisions the dedicated, narrowly-scoped
+# OpenSearch credential backend/arm.py's new OpenSearchActionStore uses to
+# persist ARM's mutable action-state (arm-action-state-task.md, 2026-09-29).
+#
+# Credential choice: a SEPARATE credential from irdp-writer, not a shared
+# one, even though irdp-writer's role pattern ("ai-rdr-*") would glob-match
+# ai-rdr-arm-action-state too. Two reasons:
+#   - irdp-writer's role only grants write+create_index on ai-rdr-* (no
+#     read) - OpenSearchActionStore.get()/all() need read, so reusing it
+#     as-is would break those calls with a 403.
+#   - Even setting that aside, sharing one credential between IRDP (needs
+#     write access to 3 different event indices) and ARM (needs read+write
+#     on exactly one action-state index) would give each component standing
+#     access to data/indices it has no reason to touch - the same
+#     least-privilege reasoning already applied to arm-executor's SSH
+#     credential and irdp-writer's own scoping. A dedicated credential,
+#     scoped to exactly ai-rdr-arm-action-state*, keeps blast radius
+#     minimal for both.
+#
+# Same "generate on-host, push straight to Infisical, never write it to the
+# repo or a task log" discipline as arm-executor/irdp-writer. Created via
+# the OpenSearch Security REST API (no securityadmin.sh/restart needed).
+#
+# Requires (passed as environment variables via the Semaphore Environment
+# attached to this template — never as -e/CLI arguments, which Semaphore
+# logs in plaintext in task history):
+#   INFISICAL_PROJECT_ID, INFISICAL_CLIENT_ID, INFISICAL_CLIENT_SECRET
+# (the same "AI-RDR Infisical (airdr-siem-agent)" machine identity already
+# used by arm-executor/irdp-writer/wazuh credential rotation.)
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_arm_opensearch.yml --limit airdr-siem:airdr-detect
+
+- name: Provision the ARM action-state OpenSearch credential on airdr-siem
+  hosts: airdr-siem
+  become: true
+  gather_facts: false
+
+  vars:
+    wazuh_docker_dir: /opt/wazuh-docker/single-node
+    indexer_url: https://localhost:9200
+    infisical_address: "https://infisical.example.com"
+    infisical_env: "prod"
+    infisical_secret_path: "/arm-action-state-credentials"
+    arm_role_name: arm_action_state_role
+    arm_user_name: arm-action-state
+    provision_script_path: /root/.provision_arm_action_state.sh
+
+  tasks:
+    - name: Fail fast if Infisical machine-identity credentials aren't set (Semaphore Environment extra-vars)
+      ansible.builtin.assert:
+        that:
+          - infisical_project_id_var is defined
+          - infisical_client_id_var is defined
+          - infisical_client_secret_var is defined
+        fail_msg: >-
+          INFISICAL_PROJECT_ID / INFISICAL_CLIENT_ID / INFISICAL_CLIENT_SECRET must be set via
+          this template's Semaphore Environment (Extra Variables) — never as -e/CLI args.
+      vars:
+        infisical_project_id_var: "{{ INFISICAL_PROJECT_ID | default(omit) }}"
+        infisical_client_id_var: "{{ INFISICAL_CLIENT_ID | default(omit) }}"
+        infisical_client_secret_var: "{{ INFISICAL_CLIENT_SECRET | default(omit) }}"
+
+    - name: Check the wazuh-docker single-node directory exists
+      ansible.builtin.stat:
+        path: "{{ wazuh_docker_dir }}/docker-compose.yml"
+      register: wazuh_compose_stat
+
+    - name: Fail if this host has no wazuh-docker deployment
+      ansible.builtin.fail:
+        msg: "{{ wazuh_docker_dir }}/docker-compose.yml not found — is this really airdr-siem?"
+      when: not wazuh_compose_stat.stat.exists
+
+    - name: Write the provisioning script (admin credential + new password never touch this playbook's own stdout/log)
+      ansible.builtin.copy:
+        dest: "{{ provision_script_path }}"
+        mode: "0700"
+        owner: root
+        group: root
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          cd {{ wazuh_docker_dir }}
+          INDEXER_URL="{{ indexer_url }}"
+          ADMIN_PASS=$(grep -m1 'INDEXER_PASSWORD' docker-compose.yml | sed 's/.*=//')
+          ROLE="{{ arm_role_name }}"
+          USER="{{ arm_user_name }}"
+
+          INFISICAL_ADDRESS="{{ infisical_address }}"
+          INFISICAL_ENV_SLUG="{{ infisical_env }}"
+          INFISICAL_SECRET_PATH="{{ infisical_secret_path }}"
+          INFISICAL_FOLDER_NAME="{{ infisical_secret_path | regex_replace('^/', '') }}"
+
+          : "${INFISICAL_PROJECT_ID:?missing}"
+          : "${INFISICAL_CLIENT_ID:?missing}"
+          : "${INFISICAL_CLIENT_SECRET:?missing}"
+
+          NEW_PASS=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | cut -c1-32)
+
+          # --- create the scoped role: read+write+create_index on ai-rdr-arm-action-state* only ---
+          role_code=$(curl -sk -o /root/.arm_os_role_resp.log -w '%{http_code}' \
+            -X PUT "${INDEXER_URL}/_plugins/_security/api/roles/${ROLE}" \
+            -u "admin:${ADMIN_PASS}" -H 'Content-Type: application/json' \
+            -d '{
+              "cluster_permissions": [],
+              "index_permissions": [
+                {"index_patterns": ["ai-rdr-arm-action-state*"], "allowed_actions": ["read", "write", "create_index"]}
+              ]
+            }')
+          if [ "$role_code" != "200" ] && [ "$role_code" != "201" ]; then
+            echo '{"status":"error","reason":"role create/update failed (http '"$role_code"') - see /root/.arm_os_role_resp.log"}'
+            exit 1
+          fi
+          rm -f /root/.arm_os_role_resp.log
+
+          # --- create the internal user, mapped to that role only ---
+          user_code=$(curl -sk -o /root/.arm_os_user_resp.log -w '%{http_code}' \
+            -X PUT "${INDEXER_URL}/_plugins/_security/api/internalusers/${USER}" \
+            -u "admin:${ADMIN_PASS}" -H 'Content-Type: application/json' \
+            -d "$(python3 -c 'import json,sys; print(json.dumps({"password": sys.argv[1], "opendistro_security_roles": [sys.argv[2]], "description": "ARM action-state store - read+write ai-rdr-arm-action-state* only"}))' "$NEW_PASS" "$ROLE")")
+          if [ "$user_code" != "200" ] && [ "$user_code" != "201" ]; then
+            echo '{"status":"error","reason":"user create/update failed (http '"$user_code"') - see /root/.arm_os_user_resp.log","role_created":true}'
+            exit 1
+          fi
+          rm -f /root/.arm_os_user_resp.log
+
+          # --- verify: new user can write+read its own index, and is rejected for an out-of-scope index ---
+          write_check=$(curl -sk -o /dev/null -w '%{http_code}' -u "${USER}:${NEW_PASS}" \
+            -X PUT "${INDEXER_URL}/ai-rdr-arm-action-state/_doc/_provision_check" \
+            -H 'Content-Type: application/json' -d '{"action_id":"_provision_check","status":"probe"}')
+          read_check=$(curl -sk -o /dev/null -w '%{http_code}' -u "${USER}:${NEW_PASS}" "${INDEXER_URL}/ai-rdr-arm-action-state/_doc/_provision_check")
+          scope_check=$(curl -sk -o /dev/null -w '%{http_code}' -u "${USER}:${NEW_PASS}" "${INDEXER_URL}/wazuh-alerts-*/_search?size=0")
+          curl -sk -o /dev/null -u "admin:${ADMIN_PASS}" -X DELETE "${INDEXER_URL}/ai-rdr-arm-action-state/_doc/_provision_check" || true
+
+          if [ "$write_check" != "200" ] && [ "$write_check" != "201" ]; then
+            echo '{"status":"error","reason":"new user cannot write ai-rdr-arm-action-state (http '"$write_check"') - scope is wrong"}'
+            exit 1
+          fi
+          if [ "$read_check" != "200" ]; then
+            echo '{"status":"error","reason":"new user cannot read back ai-rdr-arm-action-state (http '"$read_check"') - scope is wrong"}'
+            exit 1
+          fi
+          if [ "$scope_check" = "200" ]; then
+            echo '{"status":"error","reason":"new user CAN read wazuh-alerts-* - role is too broad, not scoped correctly"}'
+            exit 1
+          fi
+
+          # --- push to Infisical ---
+          infisical_login() {
+            local resp token
+            resp=$(curl -s -X POST "${INFISICAL_ADDRESS}/api/v1/auth/universal-auth/login" \
+              -H "Content-Type: application/json" \
+              -d "$(python3 -c 'import json,sys; print(json.dumps({"clientId": sys.argv[1], "clientSecret": sys.argv[2]}))' "$INFISICAL_CLIENT_ID" "$INFISICAL_CLIENT_SECRET")" 2>/dev/null)
+            token=$(echo "$resp" | python3 -c 'import sys,json; print(json.load(sys.stdin)["accessToken"])' 2>/dev/null)
+            echo "$token"
+          }
+
+          access_token=$(infisical_login)
+          if [ -z "$access_token" ]; then
+            echo '{"status":"error","reason":"infisical universal-auth login failed - credential was NOT pushed (but is live on the indexer)"}'
+            exit 1
+          fi
+
+          set +e
+          curl -s -o /dev/null -X POST "${INFISICAL_ADDRESS}/api/v1/folders" \
+            -H "Authorization: Bearer ${access_token}" -H "Content-Type: application/json" \
+            -d "$(python3 -c 'import json,sys; print(json.dumps({"workspaceId": sys.argv[1], "environment": sys.argv[2], "name": sys.argv[3], "path": "/"}))' "$INFISICAL_PROJECT_ID" "$INFISICAL_ENV_SLUG" "$INFISICAL_FOLDER_NAME")"
+          set -e
+
+          secrets_body=$(NEW_PASS="$NEW_PASS" python3 - "$INFISICAL_SECRET_PATH" "$INFISICAL_ENV_SLUG" "$INFISICAL_PROJECT_ID" "$USER" <<'PYEOF'
+          import json
+          import os
+          import sys
+
+          secret_path, env_slug, project_id, user = sys.argv[1:5]
+          password = os.environ["NEW_PASS"]
+          body = {
+              "workspaceId": project_id,
+              "environment": env_slug,
+              "secretPath": secret_path,
+              "secrets": [
+                  {"secretKey": "AIRDR_OPENSEARCH_PASSWORD", "secretValue": password},
+                  {"secretKey": "AIRDR_OPENSEARCH_USER", "secretValue": user},
+                  {"secretKey": "AIRDR_OPENSEARCH_HOST", "secretValue": "192.168.70.62"},
+                  {"secretKey": "AIRDR_OPENSEARCH_PORT", "secretValue": "9200"},
+              ],
+          }
+          print(json.dumps(body))
+          PYEOF
+          )
+
+          # POST creates (400 "Secret already exist" if this path was already populated by an
+          # earlier run - e.g. a rotation); PATCH updates in that case. Try POST first, fall back
+          # to PATCH on that specific 400 so this script is idempotent across repeat runs/rotations
+          # - same fix already applied in setup_airdr_irdp_writer.yml, missed here originally.
+          http_code=$(curl -s -o /root/.arm_os_infisical_resp.log -w '%{http_code}' \
+            -X POST "${INFISICAL_ADDRESS}/api/v3/secrets/batch/raw" \
+            -H "Authorization: Bearer ${access_token}" \
+            -H "Content-Type: application/json" \
+            -d "$secrets_body")
+
+          if [ "$http_code" = "400" ] && grep -q 'Secret already exist' /root/.arm_os_infisical_resp.log; then
+            http_code=$(curl -s -o /root/.arm_os_infisical_resp.log -w '%{http_code}' \
+              -X PATCH "${INFISICAL_ADDRESS}/api/v3/secrets/batch/raw" \
+              -H "Authorization: Bearer ${access_token}" \
+              -H "Content-Type: application/json" \
+              -d "$secrets_body")
+          fi
+
+          if [ "$http_code" != "200" ]; then
+            echo '{"status":"error","reason":"infisical push failed (http '"$http_code"') - credential is live but NOT recorded - see /root/.arm_os_infisical_resp.log"}'
+            exit 1
+          fi
+          rm -f /root/.arm_os_infisical_resp.log
+          echo '{"status":"success","role":"'"$ROLE"'","user":"'"$USER"'","write_check_http":"'"$write_check"'","read_check_http":"'"$read_check"'","out_of_scope_check_http":"'"$scope_check"'"}'
+
+    - name: Provision the role+user and push the credential to Infisical
+      ansible.builtin.command: "bash {{ provision_script_path }}"
+      environment:
+        INFISICAL_PROJECT_ID: "{{ INFISICAL_PROJECT_ID }}"
+        INFISICAL_CLIENT_ID: "{{ INFISICAL_CLIENT_ID }}"
+        INFISICAL_CLIENT_SECRET: "{{ INFISICAL_CLIENT_SECRET }}"
+      register: provision_result
+      changed_when: "'\"status\":\"success\"' in provision_result.stdout"
+      no_log: true
+
+    - name: Fail loudly if provisioning failed
+      ansible.builtin.fail:
+        msg: "arm-action-state provisioning failed: {{ provision_result.stdout }}"
+      when: "'\"status\":\"success\"' not in provision_result.stdout"
+
+    - name: Show what was granted (for audit)
+      ansible.builtin.debug:
+        msg:
+          arm_os_user: "{{ arm_user_name }}"
+          arm_os_role: "{{ arm_role_name }}"
+          scope: "read+write+create_index on ai-rdr-arm-action-state* only — verified live (write+read succeeded, wazuh-alerts-* correctly denied)"
+          infisical_path: "{{ infisical_secret_path }}"
+
+- name: Wire the ARM action-state credential into airdr-detect's systemd env
+  hosts: airdr-detect
+  become: true
+  gather_facts: false
+
+  vars:
+    infisical_address: "https://infisical.example.com"
+    infisical_env: "prod"
+    infisical_secret_path: "/arm-action-state-credentials"
+    airdr_dir: /opt/airdr-detect
+    arm_os_env_path: "{{ airdr_dir }}/arm_opensearch.env"
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+
+  tasks:
+    - name: Fail fast if Infisical machine-identity credentials aren't set
+      ansible.builtin.assert:
+        that:
+          - infisical_project_id_var is defined
+          - infisical_client_id_var is defined
+          - infisical_client_secret_var is defined
+        fail_msg: >-
+          INFISICAL_PROJECT_ID / INFISICAL_CLIENT_ID / INFISICAL_CLIENT_SECRET must be set via
+          this template's Semaphore Environment (Extra Variables) — never as -e/CLI args.
+      vars:
+        infisical_project_id_var: "{{ INFISICAL_PROJECT_ID | default(omit) }}"
+        infisical_client_id_var: "{{ INFISICAL_CLIENT_ID | default(omit) }}"
+        infisical_client_secret_var: "{{ INFISICAL_CLIENT_SECRET | default(omit) }}"
+
+    - name: Write the Infisical fetch script (credential never touches this playbook's own stdout/log)
+      ansible.builtin.copy:
+        dest: /root/.fetch_arm_opensearch_from_infisical.sh
+        mode: "0700"
+        owner: root
+        group: root
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          INFISICAL_ADDRESS="{{ infisical_address }}"
+          INFISICAL_ENV_SLUG="{{ infisical_env }}"
+          INFISICAL_SECRET_PATH="{{ infisical_secret_path }}"
+          DEST="{{ arm_os_env_path }}"
+
+          : "${INFISICAL_PROJECT_ID:?missing}"
+          : "${INFISICAL_CLIENT_ID:?missing}"
+          : "${INFISICAL_CLIENT_SECRET:?missing}"
+
+          resp=$(curl -s -X POST "${INFISICAL_ADDRESS}/api/v1/auth/universal-auth/login" \
+            -H "Content-Type: application/json" \
+            -d "$(python3 -c 'import json,sys; print(json.dumps({"clientId": sys.argv[1], "clientSecret": sys.argv[2]}))' "$INFISICAL_CLIENT_ID" "$INFISICAL_CLIENT_SECRET")" 2>/dev/null)
+          access_token=$(echo "$resp" | python3 -c 'import sys,json; print(json.load(sys.stdin)["accessToken"])' 2>/dev/null)
+          if [ -z "$access_token" ]; then
+            echo '{"status":"error","reason":"infisical universal-auth login failed"}'
+            exit 1
+          fi
+
+          raw=$(curl -s -G "${INFISICAL_ADDRESS}/api/v3/secrets/raw" \
+            --data-urlencode "workspaceId=${INFISICAL_PROJECT_ID}" \
+            --data-urlencode "environment=${INFISICAL_ENV_SLUG}" \
+            --data-urlencode "secretPath=${INFISICAL_SECRET_PATH}" \
+            -H "Authorization: Bearer ${access_token}")
+
+          env_lines=$(echo "$raw" | python3 -c '
+          import sys, json
+          d = json.load(sys.stdin)
+          for s in d.get("secrets", []):
+              key = s["secretKey"]
+              value = s["secretValue"]
+              print(f"{key}={value}")
+          ')
+          if [ -z "$env_lines" ]; then
+            echo '{"status":"error","reason":"no secrets found at '"$INFISICAL_SECRET_PATH"'"}'
+            exit 1
+          fi
+
+          umask 077
+          printf '%s\n' "$env_lines" > "$DEST"
+          chmod 600 "$DEST"
+          chown {{ ssh_user }}:{{ ssh_user }} "$DEST"
+          echo '{"status":"success"}'
+
+    - name: Fetch the credential and write it to the ARM OpenSearch env file
+      ansible.builtin.command: bash /root/.fetch_arm_opensearch_from_infisical.sh
+      environment:
+        INFISICAL_PROJECT_ID: "{{ INFISICAL_PROJECT_ID }}"
+        INFISICAL_CLIENT_ID: "{{ INFISICAL_CLIENT_ID }}"
+        INFISICAL_CLIENT_SECRET: "{{ INFISICAL_CLIENT_SECRET }}"
+      register: infisical_fetch_result
+      changed_when: "'\"status\":\"success\"' in infisical_fetch_result.stdout"
+      no_log: true
+
+    - name: Fail loudly if the Infisical fetch failed
+      ansible.builtin.fail:
+        msg: "Infisical fetch failed: {{ infisical_fetch_result.stdout }}"
+      when: "'\"status\":\"success\"' not in infisical_fetch_result.stdout"

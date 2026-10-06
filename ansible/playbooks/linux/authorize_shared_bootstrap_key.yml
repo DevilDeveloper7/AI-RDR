@@ -1,0 +1,52 @@
+---
+# Authorizes the shared bootstrap key (the same key already used for the
+# root+password->root+key bootstrap connection everywhere in this repo,
+# mounted at /ansible-ssh-keys/id_rsa inside Semaphore) for a given
+# automation user, IN ADDITION to that user's own freshly-generated
+# per-host key.
+#
+# Why this exists: the per-host key setup_ssh_key.yml generates lives only
+# in Semaphore's ephemeral task workspace (/tmp/semaphore/project_N/.ssh/)
+# and does not durably persist to Semaphore's read-only /ansible-ssh-keys/
+# mount — so any later task/template that authenticates using
+# /ansible-ssh-keys/id_<host> fails with "no such identity", even though
+# bootstrap + transition_verification both passed. Confirmed the hard way
+# onboarding the AI-RDR project's 3 VMs (2026-09-21) — it actually caused a
+# lockout (production hardening disabled root login mid-run, after which
+# even the previously-working fallback broke, requiring an offline
+# qemu-nbd disk-mount recovery).
+#
+# The shared key, by contrast, IS durably persisted (it's the whole reason
+# bootstrap inventories work at all), so authorizing it for the automation
+# user too means production-phase templates can reliably connect as that
+# user with a key that will still be there next time, without needing a
+# human to manually copy a freshly-generated key into Semaphore's key store
+# after every single new host.
+#
+# Usage:
+#   ansible-playbook playbooks/linux/authorize_shared_bootstrap_key.yml --limit <group>
+#   (runs as root during bootstrap phase, before transition_verification)
+
+- name: Authorize the shared bootstrap key for the automation user (durable fallback)
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] }}"
+
+  tasks:
+    - name: Fail fast if the shared bootstrap public key wasn't passed
+      ansible.builtin.assert:
+        that: shared_bootstrap_pubkey is defined
+        fail_msg: >-
+          Pass -e shared_bootstrap_pubkey="ssh-rsa AAAA... your-bootstrap-key" —
+          the same public key mounted as /ansible-ssh-keys/id_rsa(.pub) inside
+          Semaphore, embedded here as a required variable rather than a
+          hardcoded default so this repo never carries a real key value.
+
+    - name: Authorize shared bootstrap key for {{ ssh_user }}
+      authorized_key:
+        user: "{{ ssh_user }}"
+        key: "{{ shared_bootstrap_pubkey }}"
+        state: present

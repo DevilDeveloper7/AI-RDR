@@ -1,0 +1,96 @@
+# ───────────────────────────────────────────────
+# Generate host-specific SSH keys locally (safe + deduplicated)
+# ───────────────────────────────────────────────
+- name: Generate SSH keys and add to known_hosts (safe)
+  hosts: all
+  gather_facts: false
+  run_once: true
+  vars:
+    ssh_key_dir: "{{ lookup('env','HOME') }}/.ssh"
+  tasks:
+    - name: Ensure .ssh directory exists locally
+      delegate_to: localhost
+      file:
+        path: "{{ ssh_key_dir }}"
+        state: directory
+        mode: '0700'
+
+    # ───────────────────────────────────────────────
+    # Key generation with safety checks
+    # ───────────────────────────────────────────────
+    - name: Collect existing key info
+      delegate_to: localhost
+      stat:
+        path: "{{ ssh_key_dir }}/id_{{ hostvars[target_host].ssh_key_name | default(target_host) }}"
+      loop: "{{ ansible_play_hosts }}"
+      loop_control:
+        loop_var: target_host
+      register: existing_keys
+
+    # ───────────────────────────────────────────────
+    # Generate missing SSH keys
+    # ───────────────────────────────────────────────
+    - name: Generate missing SSH keys
+      delegate_to: localhost
+      ansible.builtin.openssh_keypair:
+        path: "{{ ssh_key_dir }}/id_{{ hostvars[item.target_host].ssh_key_name | default(item.target_host) }}"
+        type: rsa
+        size: 4096
+        state: present
+        mode: '0600'
+      loop: "{{ existing_keys.results }}"
+      when: not (item.stat.exists | default(false))
+
+    # ───────────────────────────────────────────────
+    # known_hosts management (deduplicate + safe append)
+    # ───────────────────────────────────────────────
+    - name: Remove duplicate known_hosts entries
+      delegate_to: localhost
+      known_hosts:
+        path: "{{ ssh_key_dir }}/known_hosts"
+        name: "{{ hostvars[target_host]['ansible_host'] | default(target_host) }}"
+        state: absent
+      loop: "{{ ansible_play_hosts }}"
+      loop_control:
+        loop_var: target_host
+      ignore_errors: true
+
+    - name: Ensure known_hosts entry exists
+      delegate_to: localhost
+      known_hosts:
+        path: "{{ ssh_key_dir }}/known_hosts"
+        name: "{{ hostvars[target_host]['ansible_host'] | default(target_host) }}"
+        key: "{{ lookup('pipe', 'ssh-keyscan -t rsa ' + (hostvars[target_host]['ansible_host'] | default(target_host))) }}"
+        state: present
+      loop: "{{ ansible_play_hosts }}"
+      loop_control:
+        loop_var: target_host
+
+# ───────────────────────────────────────────────
+# Upload per-host key to existing SSH user
+# ───────────────────────────────────────────────
+- name: Upload SSH keys to existing users
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] }}"
+    ssh_key_dir: "{{ lookup('env','HOME') }}/.ssh"
+    ssh_pubkey_local_path: "{{ ssh_key_dir }}/id_{{ hostvars[inventory_hostname].ssh_key_name | default(inventory_hostname) }}.pub"
+    ssh_pubkey_content: "{{ lookup('file', ssh_pubkey_local_path) }}"
+  tasks:
+    - name: Fail if user home does not exist
+      stat:
+        path: "/home/{{ ssh_user }}"
+      register: home_check
+
+    - fail:
+        msg: "SSH user {{ ssh_user }} does not exist or home directory missing!"
+      when: not home_check.stat.exists
+
+
+    - name: Upload authorized key
+      authorized_key:
+        user: "{{ ssh_user }}"
+        key: "{{ ssh_pubkey_content }}"
+        state: present

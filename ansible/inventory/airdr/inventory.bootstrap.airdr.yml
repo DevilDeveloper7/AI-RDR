@@ -1,0 +1,41 @@
+# AI-RDR (ransomware detection/response capstone project) test/demo environment.
+# Bootstrap phase — fresh VMs, root + shared key access (same key used for every
+# other homelab bootstrap inventory: /ansible-ssh-keys/id_rsa inside Semaphore,
+# /root/.ssh/id_rsa when run locally from this host).
+#
+# Own inventory group so bootstrap/production runs against
+# these 3 hosts are scoped by inventory alone, never by --limit against a
+# shared template — see docs/ for the incident where --limit/allow_override_limit
+# silently no-op'd and ran fleet-wide against a shared inventory group instead of one host.
+---
+all:
+  children:
+    airdr:
+      hosts:
+        airdr-siem:
+          ansible_host: 192.168.70.62
+          ansible_user: root
+          ssh_user: ansible-user
+          ssh_key_name: airdr-siem
+          devops_key_name: airdr-siem-devops
+          ansible_ssh_private_key_file: /ansible-ssh-keys/id_rsa
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+          ansible_python_interpreter: /usr/bin/python3
+        airdr-detect:
+          ansible_host: 192.168.70.63
+          ansible_user: root
+          ssh_user: ansible-user
+          ssh_key_name: airdr-detect
+          devops_key_name: airdr-detect-devops
+          ansible_ssh_private_key_file: /ansible-ssh-keys/id_rsa
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+          ansible_python_interpreter: /usr/bin/python3
+        airdr-target:
+          ansible_host: 192.168.70.64
+          ansible_user: root
+          ssh_user: ansible-user
+          ssh_key_name: airdr-target
+          devops_key_name: airdr-target-devops
+          ansible_ssh_private_key_file: /ansible-ssh-keys/id_rsa
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+          ansible_python_interpreter: /usr/bin/python3

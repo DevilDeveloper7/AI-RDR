@@ -1,0 +1,31 @@
+# ===============================
+# AI-RDR bootstrap phase — fresh VMs, root+key access.
+# Run with: ansible-playbook -i inventory/airdr/inventory.bootstrap.airdr.yml master/setup_airdr_bootstrap.yml
+# Creates the automation user + personal user and verifies they're ready
+# BEFORE the production phase disables root login.
+# ===============================
+
+- name: Bootstrap - Update and upgrade system
+  import_playbook: ../playbooks/ubuntu/update_upgrade_ubuntu.yml
+
+- name: Bootstrap - Create common (automation) user
+  import_playbook: ../playbooks/linux/setup_common_user.yml
+
+- name: Bootstrap - Setup sudo permissions
+  import_playbook: ../playbooks/ubuntu/setup_automation_user_permissions.yml
+
+- name: Bootstrap - Generate and upload SSH keys
+  import_playbook: ../playbooks/linux/setup_ssh_key.yml
+
+- name: Bootstrap - Create personal user
+  import_playbook: ../playbooks/linux/setup_personal_user.yml
+
+# Guards against the per-host key Ansible just generated above not durably
+# persisting to Semaphore's /ansible-ssh-keys/ mount (confirmed to happen —
+# see that playbook's header comment). Production phase authenticates using
+# THIS key instead, not the per-host one.
+- name: Bootstrap - Authorize the durable shared key as a fallback for ansible-user
+  import_playbook: ../playbooks/linux/authorize_shared_bootstrap_key.yml
+
+- name: Bootstrap - Verify transition readiness
+  import_playbook: ../playbooks/linux/transition_verification.yml

@@ -1,0 +1,297 @@
+---
+# AI-RDR capstone project — wires a real Wazuh active-response hook on
+# airdr-siem so the honey-file rules (100100/100103, deploy_wazuh_custom_
+# rules.yml — detection logic itself is untouched here) actually trigger
+# the real ARM backend instead of just producing a log-only alert
+# (arm-deployment-task.md, 2026-09-29).
+#
+# The response script (arm-trigger.py) runs on the manager (location=server)
+# and does exactly one thing: read the alert Wazuh hands it on stdin, pull
+# out enough fields to build a valid /api/arm/trigger payload (see
+# backend/arm.py's select_playbook()/handle_trigger() — a honey-file signal
+# always selects PB-04 regardless of other fields), and POST it to
+# airdr-detect. It does not itself isolate/kill/quarantine anything — all of
+# that is the ARM backend's job, gated by its own approval logic.
+#
+# Two gotchas this playbook is built around (hit for real on another Wazuh
+# manager this project operates, same wazuh-docker single-node image):
+#   - active-response/bin IS a named Docker volume (wazuh_active_response,
+#     confirmed in docker-compose.yml) with no host bind mount, so docker cp
+#     for the script itself is fine and persists across restarts — same as
+#     local_rules.xml.
+#   - ossec.conf is NOT persistent via docker cp: the container entrypoint
+#     re-copies the host-side bind-mounted config/wazuh_cluster/
+#     wazuh_manager.conf over /var/ossec/etc/ossec.conf on every restart.
+#     The <command>/<active-response> blocks MUST go in that host file
+#     directly, or they silently revert on the next restart.
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_arm_active_response.yml --limit airdr-siem
+
+- name: Wire a real Wazuh active-response hook for the honey-file rules
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    wazuh_docker_dir: /opt/wazuh-docker/single-node
+    arm_trigger_script_tmp: /root/.airdr_arm_trigger.py.tmp
+    # airdr-detect's ARM backend — see setup_airdr_detect.yml
+    arm_trigger_url: "http://192.168.70.63:5000/api/arm/trigger"
+    arm_response_command_name: arm-trigger
+    arm_response_executable: arm-trigger.py
+    arm_response_rule_ids: "100100,100103"
+
+  tasks:
+    - name: Check the wazuh-docker single-node directory exists
+      ansible.builtin.stat:
+        path: "{{ wazuh_docker_dir }}/docker-compose.yml"
+      register: wazuh_compose_stat
+
+    - name: Fail if this host has no wazuh-docker deployment
+      ansible.builtin.fail:
+        msg: "{{ wazuh_docker_dir }}/docker-compose.yml not found — is this really airdr-siem?"
+      when: not wazuh_compose_stat.stat.exists
+
+    - name: Write the active-response trigger script to a temp path on the host
+      ansible.builtin.copy:
+        dest: "{{ arm_trigger_script_tmp }}"
+        owner: root
+        group: root
+        mode: "0750"
+        content: |
+          #!/usr/bin/env python3
+          """
+          AI-RDR ARM active-response hook (managed by ansible-devops-staff,
+          playbooks/ubuntu/setup_airdr_arm_active_response.yml — re-running that
+          playbook replaces this file; don't edit it inside the container).
+
+          Wazuh calls this on the manager (location=server) for every alert
+          matching rules {{ arm_response_rule_ids }} (honey-file access/rename —
+          see deploy_wazuh_custom_rules.yml). It reads the standard active-response
+          JSON envelope from stdin:
+            {"version":1,"origin":{...},"command":"add","parameters":{"alert":{...}}}
+          and POSTs a trigger payload to the ARM backend's /api/arm/trigger, shaped
+          so backend/arm.py's select_playbook() picks PB-04 (honeyfile_triggered is
+          checked before risk_tier, regardless of tier — see that function's
+          docstring) — this hook does not decide policy, ARM's own approval gate
+          does (PB-04 always produces pending_approval, never auto-executes).
+
+          `host` is taken from the alert's agent.ip (not agent.name) so
+          SSHHostController can reach it without relying on DNS resolution working
+          from airdr-detect's network namespace.
+
+          Never raises past its own try/except - a malformed alert or an
+          unreachable ARM backend must not crash/hang the active-response
+          subsystem for the rest of the manager. Every outcome is logged to
+          /var/ossec/logs/active-responses.log (the standard active-response log
+          location), same as Wazuh's own bundled response scripts.
+          """
+          import json
+          import sys
+          import urllib.error
+          import urllib.request
+          from datetime import datetime, timezone
+
+          ARM_TRIGGER_URL = "{{ arm_trigger_url }}"
+          LOG_PATH = "/var/ossec/logs/active-responses.log"
+
+
+          def log(msg: str) -> None:
+              line = f"{datetime.now(timezone.utc).isoformat()} {arm_response_executable_name}: {msg}\n"
+              try:
+                  with open(LOG_PATH, "a") as f:
+                      f.write(line)
+              except OSError:
+                  pass
+
+
+          arm_response_executable_name = "{{ arm_response_executable }}"
+
+
+          def main() -> int:
+              try:
+                  envelope = json.loads(sys.stdin.readline() or "{}")
+              except json.JSONDecodeError as exc:
+                  log(f"failed to parse stdin as JSON: {exc}")
+                  return 0
+
+              if envelope.get("command") != "add":
+                  # Wazuh also invokes active-response scripts with "delete" for
+                  # timed-out responses (timeout_allowed) - this hook has no
+                  # timeout and nothing to undo on its own side, so just ack.
+                  log(f"ignoring command={envelope.get('command')!r} (no-op)")
+                  return 0
+
+              alert = (envelope.get("parameters") or {}).get("alert") or {}
+              agent = alert.get("agent") or {}
+              rule = alert.get("rule") or {}
+              audit = (alert.get("data") or {}).get("audit") or {}
+
+              host = agent.get("ip")
+              if not host:
+                  log(f"alert has no agent.ip, cannot build a trigger - alert id {alert.get('id')!r}")
+                  return 0
+
+              file_path = None
+              audit_file = audit.get("file") or {}
+              audit_directory = audit.get("directory") or {}
+              if audit_file.get("name"):
+                  file_path = audit_file["name"]
+              elif audit_directory.get("name"):
+                  file_path = audit_directory["name"]
+
+              payload = {
+                  "host": host,
+                  "honeyfile_triggered": True,
+                  "signals": ["honeyfile"],
+                  "trigger_timestamp": alert.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+                  "source": "wazuh-active-response",
+                  "rule_id": rule.get("id"),
+                  "rule_description": rule.get("description"),
+                  "wazuh_alert_id": alert.get("id"),
+              }
+              if file_path:
+                  payload["file_path"] = file_path
+              if audit.get("pid"):
+                  payload["process_id"] = audit.get("pid")
+
+              body = json.dumps(payload).encode("utf-8")
+              req = urllib.request.Request(
+                  ARM_TRIGGER_URL,
+                  data=body,
+                  headers={"Content-Type": "application/json"},
+                  method="POST",
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=10) as resp:
+                      resp_body = resp.read().decode("utf-8", errors="replace")
+                      log(f"POST {ARM_TRIGGER_URL} -> {resp.status} {resp_body} (payload={json.dumps(payload)})")
+              except urllib.error.HTTPError as exc:
+                  resp_body = exc.read().decode("utf-8", errors="replace")
+                  log(f"POST {ARM_TRIGGER_URL} -> HTTP {exc.code} {resp_body} (payload={json.dumps(payload)})")
+              except urllib.error.URLError as exc:
+                  log(f"POST {ARM_TRIGGER_URL} failed: {exc} (payload={json.dumps(payload)})")
+
+              return 0
+
+
+          if __name__ == "__main__":
+              sys.exit(main())
+
+    - name: Find the wazuh.manager container id
+      ansible.builtin.command: docker compose ps -q wazuh.manager
+      args:
+        chdir: "{{ wazuh_docker_dir }}"
+      register: manager_cid
+      changed_when: false
+
+    - name: Fail if the wazuh.manager container isn't running
+      ansible.builtin.fail:
+        msg: "wazuh.manager container not found/running - is the stack up?"
+      when: manager_cid.stdout | trim | length == 0
+
+    - name: Copy the trigger script into the active-response bin volume (persists — named volume, no bind mount, same pattern as local_rules.xml)
+      ansible.builtin.command: >-
+        docker cp {{ arm_trigger_script_tmp }} {{ manager_cid.stdout | trim }}:/var/ossec/active-response/bin/{{ arm_response_executable }}
+      changed_when: true
+
+    - name: Fix ownership/mode inside the container (root:wazuh 0750, matches every other bundled active-response script)
+      ansible.builtin.command: >-
+        docker exec {{ manager_cid.stdout | trim }} sh -c
+        'chown root:wazuh /var/ossec/active-response/bin/{{ arm_response_executable }} && chmod 750 /var/ossec/active-response/bin/{{ arm_response_executable }}'
+      changed_when: false
+
+    - name: Remove the temp script from the host
+      ansible.builtin.file:
+        path: "{{ arm_trigger_script_tmp }}"
+        state: absent
+
+    - name: Add the <command>/<active-response> block to the HOST-side wazuh_manager.conf (NOT via docker cp — see header comment)
+      ansible.builtin.blockinfile:
+        path: "{{ wazuh_docker_dir }}/config/wazuh_cluster/wazuh_manager.conf"
+        marker: "  <!-- {mark} ANSIBLE MANAGED BLOCK: airdr ARM active-response -->"
+        # blockinfile matches insertbefore against ONE line at a time - a pattern
+        # spanning "<!--" and "<active-response>" (which are on separate lines in
+        # the stock commented-out placeholder) never matches any single line, and
+        # blockinfile silently falls back to appending at the END of the file
+        # instead - landing the block AFTER the closing </ossec_config>, which is
+        # invalid XML and crashed wazuh-csyslogd on the very next restart (hit for
+        # real 2026-09-29, recovered via a hand patch - see git history for this
+        # line). The stock placeholder's opening "  <!--" is a standalone line
+        # nowhere else in the file - match exactly that.
+        insertbefore: '^\s*<!--\s*$'
+        block: |2
+              <command>
+                <name>{{ arm_response_command_name }}</name>
+                <executable>{{ arm_response_executable }}</executable>
+                <timeout_allowed>no</timeout_allowed>
+              </command>
+
+              <active-response>
+                <command>{{ arm_response_command_name }}</command>
+                <location>server</location>
+                <rules_id>{{ arm_response_rule_ids }}</rules_id>
+              </active-response>
+      register: conf_block_result
+
+    - name: Restart the wazuh.manager container to reload ossec.conf
+      ansible.builtin.command: docker compose restart wazuh.manager
+      args:
+        chdir: "{{ wazuh_docker_dir }}"
+      when: conf_block_result.changed
+
+    - name: Wait for the manager API to respond again after restart
+      ansible.builtin.uri:
+        url: "https://localhost:55000/"
+        method: GET
+        validate_certs: false
+        status_code: [200, 401]
+      register: manager_health
+      until: manager_health.status in [200, 401]
+      retries: 24
+      delay: 10
+      when: conf_block_result.changed
+
+    - name: Find the new wazuh.manager container id (restart creates a fresh container id under compose)
+      ansible.builtin.command: docker compose ps -q wazuh.manager
+      args:
+        chdir: "{{ wazuh_docker_dir }}"
+      register: manager_cid_after
+      changed_when: false
+
+    - name: Verify the active-response block is present in the RUNNING container's ossec.conf (catches the silent-revert class of bug directly, not just the host file)
+      ansible.builtin.command: >-
+        docker exec {{ manager_cid_after.stdout | trim }} grep -c "{{ arm_response_command_name }}" /var/ossec/etc/ossec.conf
+      register: live_conf_check
+      changed_when: false
+      failed_when: false
+
+    - name: Fail if the live container's ossec.conf doesn't have the block (persistence gotcha recurred)
+      ansible.builtin.fail:
+        msg: >-
+          '{{ arm_response_command_name }}' not found in the RUNNING container's ossec.conf
+          (grep count: {{ live_conf_check.stdout | trim }}) - the host-side
+          config/wazuh_cluster/wazuh_manager.conf edit didn't take. Do not assume success
+          from the host-file diff alone.
+      when: live_conf_check.stdout | trim == "0"
+
+    - name: Check the manager log for a rule/active-response load error around startup
+      ansible.builtin.shell: >-
+        docker exec {{ manager_cid_after.stdout | trim }} tail -n 200 /var/ossec/logs/ossec.log
+        | grep -iE 'error.*(rule|active.response|command)|(rule|active.response|command).*error' || true
+      register: load_check
+      changed_when: false
+
+    - name: Fail if the manager logged a rule/active-response loading error
+      ansible.builtin.fail:
+        msg: "Possible active-response load problem - manager log excerpt: {{ load_check.stdout }}"
+      when: "'ERROR' in load_check.stdout"
+
+    - name: Show verification info
+      ansible.builtin.debug:
+        msg:
+          manager_container_after_restart: "{{ manager_cid_after.stdout | trim }}"
+          manager_api_status: "{{ manager_health.status | default('not restarted this run') }}"
+          live_ossec_conf_grep_count: "{{ live_conf_check.stdout | trim }}"
+          log_excerpt: "{{ load_check.stdout | default('(no rule/active-response/command error lines found in last 200 log lines)') }}"

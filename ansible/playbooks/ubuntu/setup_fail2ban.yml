@@ -1,0 +1,172 @@
+---
+- name: Configure fail2ban with SSH and Docker jail
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+    fail2ban_jail_local: /etc/fail2ban/jail.local
+    fail2ban_jail_backup: /etc/fail2ban/jail.local.bak
+    fail2ban_sshd_filter: /etc/fail2ban/filter.d/sshd-custom.conf
+
+    # Tunable defaults - override from inventory or extra-vars
+    f2b_bantime: "1h"
+    f2b_findtime: "10m"
+    f2b_maxretry: 5
+    f2b_ssh_port: "{{ ansible_port | default(22) }}"
+    # Add your own admin/management source IPs here (control hosts that
+    # routinely SSH into this fleet for provisioning/debugging) so a handful
+    # of failed auth attempts during troubleshooting doesn't trip a
+    # self-inflicted fail2ban ban. Hit this for real twice during this
+    # project (once on the Semaphore/Ansible control host's own IP during
+    # provisioning, once during a later live-debugging session) before this
+    # was added - worth tuning before relying on this in a real deployment.
+    f2b_ignoreip: "127.0.0.1/8 ::1"
+
+  tasks:
+    # -----------------------------
+    # 1. Install fail2ban
+    # -----------------------------
+    - name: Install fail2ban
+      apt:
+        name: fail2ban
+        state: present
+        update_cache: yes
+
+    - name: Check if jail.local already exists
+      stat:
+        path: "{{ fail2ban_jail_local }}"
+      register: jail_local_stat
+
+    - name: Backup existing jail.local if present
+      copy:
+        src: "{{ fail2ban_jail_local }}"
+        dest: "{{ fail2ban_jail_backup }}"
+        remote_src: true
+      when: jail_local_stat.stat.exists
+      ignore_errors: yes
+
+    # -----------------------------
+    # 2. Write jail.local
+    # -----------------------------
+    - block:
+        - name: Write jail.local with SSH and Docker HTTP jails
+          copy:
+            dest: "{{ fail2ban_jail_local }}"
+            owner: root
+            group: root
+            mode: '0644'
+            content: |
+              [DEFAULT]
+              # Global defaults - applied to every jail unless overridden
+              bantime   = {{ f2b_bantime }}
+              findtime  = {{ f2b_findtime }}
+              maxretry  = {{ f2b_maxretry }}
+              ignoreip  = {{ f2b_ignoreip }}
+
+              # Ban action: use iptables-multiport to block all ports for the banned IP
+              banaction = iptables-multiport
+              banaction_allports = iptables-allports
+
+              # Log backend - auto-detects systemd if available, falls back to pyinotify
+              backend = auto
+
+              # --------------------------
+              # SSH brute-force protection
+              # --------------------------
+              [sshd]
+              enabled  = true
+              port     = {{ f2b_ssh_port }}
+              filter   = sshd
+              backend  = systemd
+              maxretry = 3
+              bantime  = 24h
+              findtime = 1h
+
+              # Extra-aggressive: block on repeated authentication failures
+              [sshd-aggressive]
+              enabled  = true
+              port     = {{ f2b_ssh_port }}
+              filter   = sshd
+              backend  = systemd
+              maxretry = 10
+              bantime  = 48h
+              findtime = 24h
+
+              # --------------------------
+              # HAProxy HTTP abuse (reads haproxy log via syslog journal)
+              # --------------------------
+              [haproxy-http-auth]
+              enabled   = false
+              port      = http,https
+              filter    = haproxy-http-auth
+              logpath   = /var/log/haproxy.log
+              maxretry  = 10
+              bantime   = 2h
+              findtime  = 10m
+
+              # --------------------------
+              # Docker daemon socket protection
+              # Block IPs that hit the Docker API more than expected
+              # (only relevant if Docker API is ever exposed on a TCP port)
+              # --------------------------
+              [docker-auth]
+              enabled  = false
+              port     = 2375,2376
+              filter   = docker-auth
+              logpath  = /var/log/docker.log
+              maxretry = 5
+              bantime  = 24h
+              findtime = 10m
+
+        # -----------------------------
+        # 3. Ensure fail2ban service is up
+        # -----------------------------
+        - name: Enable and start fail2ban
+          systemd:
+            name: fail2ban
+            state: restarted
+            enabled: true
+            daemon_reload: yes
+
+        - name: Wait for fail2ban to initialise
+          wait_for:
+            timeout: 5
+
+        - name: Verify sshd jail is active
+          command: fail2ban-client status sshd
+          register: f2b_status
+          changed_when: false
+          failed_when: f2b_status.rc != 0
+
+        - name: Display fail2ban sshd jail status
+          debug:
+            var: f2b_status.stdout_lines
+
+      rescue:
+        - name: Check if jail.local backup exists
+          stat:
+            path: "{{ fail2ban_jail_backup }}"
+          register: jail_backup_check
+
+        - name: Restore previous jail.local on failure
+          copy:
+            src: "{{ fail2ban_jail_backup }}"
+            dest: "{{ fail2ban_jail_local }}"
+            remote_src: true
+          when: jail_backup_check.stat.exists
+
+        - name: Remove jail.local if no backup existed
+          file:
+            path: "{{ fail2ban_jail_local }}"
+            state: absent
+          when: not jail_backup_check.stat.exists
+
+        - name: Restart fail2ban with previous config
+          systemd:
+            name: fail2ban
+            state: restarted
+          ignore_errors: yes
+
+        - fail:
+            msg: "fail2ban configuration failed. Config rolled back."

@@ -1,0 +1,198 @@
+---
+# AI-RDR capstone project — wraps backend/irdp/pipeline.py's run_once()
+# (single-pass by design, see its own docstring) in a systemd timer so it
+# actually runs repeatedly against real data (irdp-deployment-task.md,
+# 2026-09-29). Uses FileCheckpointStore (not the in-memory default) so a
+# service restart/redeploy doesn't reprocess already-seen events.
+#
+# oneshot service + timer, not a Restart=always loop with a sleep baked in -
+# standard systemd idiom for a periodic task, and gives clean per-run
+# success/failure accounting in `systemctl status`/journalctl that a bare
+# long-running loop process wouldn't.
+#
+# Reads OpenSearch credentials from irdp.env (populated by
+# setup_airdr_irdp_writer.yml from Infisical) - never hardcoded in the
+# script itself.
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_irdp_service.yml --limit airdr-detect
+
+- name: Set up the IRDP polling systemd timer on airdr-detect
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    airdr_dir: /opt/airdr-detect
+    venv_dir: "{{ airdr_dir }}/venv"
+    irdp_poll_interval_seconds: 30
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+
+  tasks:
+    - name: Check irdp.env exists (setup_airdr_irdp_writer.yml must run first)
+      ansible.builtin.stat:
+        path: "{{ airdr_dir }}/irdp.env"
+      register: irdp_env_stat
+
+    - name: Fail if irdp.env is missing
+      ansible.builtin.fail:
+        msg: "{{ airdr_dir }}/irdp.env not found - run setup_airdr_irdp_writer.yml first."
+      when: not irdp_env_stat.stat.exists
+
+    - name: Deploy the IRDP polling entrypoint script
+      ansible.builtin.copy:
+        dest: "{{ airdr_dir }}/run_irdp.py"
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "0750"
+        content: |
+          #!/usr/bin/env python3
+          """
+          IRDP polling entrypoint - wraps backend.irdp.pipeline.run_once() in
+          a single invocation, meant to be called repeatedly by the
+          irdp-poll.timer systemd timer (setup_airdr_irdp_service.yml), not
+          run directly as a long-lived process (run_once() is deliberately
+          single-pass - see backend/irdp/__init__.py's package docstring).
+
+          Reads OpenSearch credentials from irdp.env (populated from
+          Infisical by setup_airdr_irdp_writer.yml) - never hardcoded here.
+          Uses FileCheckpointStore so a restart doesn't reprocess events
+          already written.
+          """
+          from __future__ import annotations
+
+          import logging
+          import os
+          import sys
+
+          sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+          from backend.irdp import (
+              FileCheckpointStore,
+              OpenSearchEventWriter,
+              RealWazuhEventSource,
+              run_once,
+          )
+
+          logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+          log = logging.getLogger("irdp")
+
+          ENV_PATH = "{{ airdr_dir }}/irdp.env"
+          CHECKPOINT_PATH = "{{ airdr_dir }}/irdp_checkpoint.json"
+
+
+          def _load_env() -> dict:
+              env = {}
+              with open(ENV_PATH) as f:
+                  for line in f:
+                      line = line.strip()
+                      if not line or "=" not in line:
+                          continue
+                      key, value = line.split("=", 1)
+                      env[key] = value
+              return env
+
+
+          def main() -> int:
+              env = _load_env()
+              host = env["IRDP_OPENSEARCH_HOST"]
+              user = env["IRDP_OPENSEARCH_USER"]
+              password = env["IRDP_OPENSEARCH_PASSWORD"]
+              port = int(env["IRDP_OPENSEARCH_PORT"])
+
+              source = RealWazuhEventSource(host=host, username=user, password=password, port=port)
+              writer = OpenSearchEventWriter(host=host, username=user, password=password, port=port)
+              checkpoint_store = FileCheckpointStore(CHECKPOINT_PATH)
+
+              summary = run_once(source, checkpoint_store, writer)
+              log.info("run_once summary: %s", summary)
+              return 0
+
+
+          if __name__ == "__main__":
+              sys.exit(main())
+
+    - name: Write the IRDP poll oneshot service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/irdp-poll.service
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=IRDP single-pass poll (run_once) - see run_irdp.py
+          After=network.target
+
+          [Service]
+          Type=oneshot
+          User={{ ssh_user }}
+          WorkingDirectory={{ airdr_dir }}
+          ExecStart={{ venv_dir }}/bin/python {{ airdr_dir }}/run_irdp.py
+
+    - name: Write the IRDP poll timer ({{ irdp_poll_interval_seconds }}s interval)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/irdp-poll.timer
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Run irdp-poll.service every {{ irdp_poll_interval_seconds }}s
+
+          [Timer]
+          OnBootSec={{ irdp_poll_interval_seconds }}s
+          OnUnitActiveSec={{ irdp_poll_interval_seconds }}s
+          AccuracySec=1s
+
+          [Install]
+          WantedBy=timers.target
+
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Enable and start the IRDP poll timer
+      ansible.builtin.systemd:
+        name: irdp-poll.timer
+        enabled: true
+        state: restarted
+
+    - name: Run one poll immediately (don't wait for the first timer tick to find out if it's broken)
+      ansible.builtin.systemd:
+        name: irdp-poll.service
+        state: started
+
+    - name: Wait for the immediate run to finish
+      ansible.builtin.command: systemctl is-active irdp-poll.service
+      register: irdp_run_status
+      until: irdp_run_status.stdout != "activating"
+      retries: 10
+      delay: 2
+      changed_when: false
+      failed_when: false
+
+    - name: Show the immediate run's outcome
+      ansible.builtin.command: systemctl show irdp-poll.service -p Result -p ExecMainStatus
+      register: irdp_run_result
+      changed_when: false
+
+    - name: Fail if the immediate run didn't succeed
+      ansible.builtin.fail:
+        msg: "irdp-poll.service did not succeed: {{ irdp_run_result.stdout }}"
+      when: "'Result=success' not in irdp_run_result.stdout"
+
+    - name: Show timer status
+      ansible.builtin.command: systemctl list-timers irdp-poll.timer --no-pager
+      register: timer_status
+      changed_when: false
+
+    - name: Show recent journal output from the immediate run
+      ansible.builtin.command: journalctl -u irdp-poll.service -n 20 --no-pager
+      register: irdp_journal
+      changed_when: false
+
+    - name: Show verification info
+      ansible.builtin.debug:
+        msg:
+          timer_status: "{{ timer_status.stdout_lines }}"
+          journal_tail: "{{ irdp_journal.stdout_lines }}"

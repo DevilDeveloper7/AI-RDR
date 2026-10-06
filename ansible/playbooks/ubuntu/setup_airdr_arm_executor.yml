@@ -1,0 +1,393 @@
+---
+# AI-RDR capstone project — provisions the dedicated, narrowly-scoped SSH
+# credential ARM's SSHHostController uses to act against airdr-target
+# (arm-deployment-task.md, 2026-09-29).
+#
+# Security model: the shared `ansible-user` account has full passwordless
+# sudo across this infrastructure (config-management convenience) — reusing
+# it for ARM's own actions would mean anyone who can trigger ARM (or exploit
+# a bug in it) gets root-equivalent access to airdr-target. Instead:
+#   - a dedicated `arm-executor` user, with its OWN ed25519 keypair (not the
+#     shared bootstrap key)
+#   - a sudoers NOPASSWD rule scoped to exactly the commands
+#     backend/host_controller.py's SSHHostController issues (iptables, kill,
+#     mkdir/mv/chmod for quarantine, chattr for lock/unlock, cp for
+#     snapshot, tee/sed for policy/blocklist rules) — not ALL
+#   - the private key is generated ON airdr-target, pushed straight to
+#     Infisical (project airdr, path /arm-executor-credentials) from
+#     airdr-target using that project's own machine-identity credentials,
+#     and never written to this repo, printed to a Semaphore task log, or
+#     seen by the Ansible controller — same pattern as
+#     rotate_wazuh_credentials.yml. The local copy is deliberately NOT
+#     deleted afterward: it's a root-only (0600) file on the same host
+#     whose root already fully controls the account regardless, and keeping
+#     it means reruns are idempotent (same key every time) instead of
+#     silently rotating the key (and breaking airdr-detect's copy) on every
+#     replay.
+#
+# Play 2 (airdr-detect) fetches just the private key back out of Infisical
+# and restarts the ARM backend so it can actually use it — the backend's
+# systemd unit (setup_airdr_detect.yml) already points AIRDR_SSH_USER/
+# AIRDR_SSH_KEY_PATH at this account/path; those are non-secret config, not
+# credentials, so they're fine hardcoded there.
+#
+# Requires (passed as environment variables via the Semaphore Environment
+# attached to this template — never as -e/CLI arguments, which Semaphore
+# logs in plaintext in task history):
+#   INFISICAL_PROJECT_ID, INFISICAL_CLIENT_ID, INFISICAL_CLIENT_SECRET
+# (the same "AI-RDR Infisical (airdr-siem-agent)" machine identity already
+# used by "AI-RDR - Rotate Wazuh Credentials".)
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_arm_executor.yml --limit airdr-target:airdr-detect
+
+- name: Provision the arm-executor credential on airdr-target
+  hosts: airdr-target
+  become: true
+  gather_facts: false
+
+  vars:
+    infisical_address: "https://infisical.example.com"
+    infisical_env: "prod"
+    infisical_secret_path: "/arm-executor-credentials"
+    arm_executor_user: "arm-executor"
+    keygen_dir: "/root/.arm_executor_keygen"
+    quarantine_dir: /var/lib/airdr/quarantine
+    backup_dir: /var/lib/airdr/backups
+    policy_file: /etc/airdr/policy.rules
+    blocklist_file: /etc/airdr/blocklist.rules
+    ssh_port: 22
+
+  tasks:
+    - name: Fail fast if Infisical machine-identity credentials aren't set (Semaphore Environment extra-vars)
+      ansible.builtin.assert:
+        that:
+          - infisical_project_id_var is defined
+          - infisical_client_id_var is defined
+          - infisical_client_secret_var is defined
+        fail_msg: >-
+          INFISICAL_PROJECT_ID / INFISICAL_CLIENT_ID / INFISICAL_CLIENT_SECRET must be set via
+          this template's Semaphore Environment (Extra Variables) — never as -e/CLI args.
+      vars:
+        infisical_project_id_var: "{{ INFISICAL_PROJECT_ID | default(omit) }}"
+        infisical_client_id_var: "{{ INFISICAL_CLIENT_ID | default(omit) }}"
+        infisical_client_secret_var: "{{ INFISICAL_CLIENT_SECRET | default(omit) }}"
+
+    - name: Create the arm-executor account (no password login, key-only)
+      ansible.builtin.user:
+        name: "{{ arm_executor_user }}"
+        shell: /bin/bash
+        password: "!"
+        create_home: true
+        system: true
+
+    - name: Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: "/home/{{ arm_executor_user }}/.ssh"
+        state: directory
+        owner: "{{ arm_executor_user }}"
+        group: "{{ arm_executor_user }}"
+        mode: "0700"
+
+    - name: Ensure the keygen directory exists (root-only, holds the persistent local copy)
+      ansible.builtin.file:
+        path: "{{ keygen_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Generate the dedicated ed25519 keypair (idempotent — only generated once, see header comment)
+      ansible.builtin.command: ssh-keygen -t ed25519 -N "" -C "arm-executor@airdr-target" -f {{ keygen_dir }}/id_ed25519
+      args:
+        creates: "{{ keygen_dir }}/id_ed25519"
+
+    - name: Read the generated public key
+      ansible.builtin.slurp:
+        src: "{{ keygen_dir }}/id_ed25519.pub"
+      register: arm_executor_pubkey_b64
+
+    - name: Read the generated private key (kept in memory only for the Infisical push below, no_log'd)
+      ansible.builtin.slurp:
+        src: "{{ keygen_dir }}/id_ed25519"
+      register: arm_executor_privkey_b64
+      no_log: true
+
+    - name: Install the public key as arm-executor's own authorized_keys (full shell access — ARM issues many different commands over one reused connection, unlike wazuh-reader's single forced command)
+      ansible.builtin.copy:
+        dest: "/home/{{ arm_executor_user }}/.ssh/authorized_keys"
+        owner: "{{ arm_executor_user }}"
+        group: "{{ arm_executor_user }}"
+        mode: "0600"
+        content: "{{ arm_executor_pubkey_b64.content | b64decode }}"
+
+    - name: Ensure /etc/airdr exists (tee -a can't create its own parent directory)
+      ansible.builtin.file:
+        path: /etc/airdr
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Write the scoped sudoers rule (exactly the commands host_controller.py's SSHHostController issues — not ALL)
+      ansible.builtin.copy:
+        dest: "/etc/sudoers.d/{{ arm_executor_user }}"
+        owner: root
+        group: root
+        mode: "0440"
+        content: |
+          # arm-executor: least-privilege NOPASSWD rule scoped to exactly the
+          # shell commands ARM's SSHHostController (backend/host_controller.py)
+          # issues against this host. Do not widen this to ALL — see
+          # arm-deployment-task.md (2026-09-29) and setup_airdr_arm_executor.yml.
+
+          # isolate()/release_host(): quarantine-bridge firewall chain
+          Cmnd_Alias ARM_ISOLATE = \
+              /usr/sbin/iptables -N airdr_isolate, \
+              /usr/sbin/iptables -F airdr_isolate, \
+              /usr/sbin/iptables -A airdr_isolate -p tcp --dport {{ ssh_port }} -j ACCEPT, \
+              /usr/sbin/iptables -A airdr_isolate -j DROP, \
+              /usr/sbin/iptables -C INPUT -j airdr_isolate, \
+              /usr/sbin/iptables -I INPUT -j airdr_isolate, \
+              /usr/sbin/iptables -D INPUT -j airdr_isolate, \
+              /usr/sbin/iptables -X airdr_isolate
+
+          # block_ip_hash()/unblock_ip_hash(): IP-based firewall rule path
+          Cmnd_Alias ARM_BLOCK_IP = \
+              /usr/sbin/iptables -A INPUT -s * -j DROP, \
+              /usr/sbin/iptables -D INPUT -s * -j DROP
+
+          # block_ip_hash()/unblock_ip_hash(): hash-based blocklist-file path
+          Cmnd_Alias ARM_BLOCKLIST = \
+              /usr/bin/tee -a {{ blocklist_file }}, \
+              /usr/bin/sed -i * {{ blocklist_file }}
+
+          # update_policy()/remove_policy(): FW/EDR/IDS policy-rule file
+          Cmnd_Alias ARM_POLICY = \
+              /usr/bin/tee -a {{ policy_file }}, \
+              /usr/bin/sed -i * {{ policy_file }}
+
+          # terminate_process(): no reverse — SDD marks this non-reversible
+          Cmnd_Alias ARM_KILL = /usr/bin/kill -9 *
+
+          # quarantine_file()/unquarantine_file()
+          Cmnd_Alias ARM_QUARANTINE = \
+              /usr/bin/mkdir -p {{ quarantine_dir }}, \
+              /usr/bin/mv * {{ quarantine_dir }}/, \
+              /usr/bin/mv {{ quarantine_dir }}/* *, \
+              /usr/bin/chmod 000 {{ quarantine_dir }}/*, \
+              /usr/bin/chmod 644 {{ quarantine_dir }}/*
+
+          # lock_directory()/unlock_directory(): PathPredict-predicted targets, path is inherently dynamic
+          Cmnd_Alias ARM_LOCK = /usr/bin/chattr +i *, /usr/bin/chattr -i *
+
+          # snapshot()/remove_snapshot(): file-level backup (no LVM/ZFS assumed)
+          Cmnd_Alias ARM_SNAPSHOT = \
+              /usr/bin/mkdir -p {{ backup_dir }}/*, \
+              /usr/bin/cp -a /home/. {{ backup_dir }}/*, \
+              /usr/bin/rm -rf {{ backup_dir }}/*
+
+          {{ arm_executor_user }} ALL=(root) NOPASSWD: ARM_ISOLATE, ARM_BLOCK_IP, ARM_BLOCKLIST, ARM_POLICY, ARM_KILL, ARM_QUARANTINE, ARM_LOCK, ARM_SNAPSHOT
+        validate: "visudo -cf %s"
+
+    - name: Write the Infisical push script (private key never touches this playbook's own stdout/log)
+      ansible.builtin.copy:
+        dest: /root/.push_arm_executor_key_to_infisical.sh
+        mode: "0700"
+        owner: root
+        group: root
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          INFISICAL_ADDRESS="{{ infisical_address }}"
+          INFISICAL_ENV_SLUG="{{ infisical_env }}"
+          INFISICAL_SECRET_PATH="{{ infisical_secret_path }}"
+          INFISICAL_FOLDER_NAME="{{ infisical_secret_path | regex_replace('^/', '') }}"
+
+          : "${INFISICAL_PROJECT_ID:?missing}"
+          : "${INFISICAL_CLIENT_ID:?missing}"
+          : "${INFISICAL_CLIENT_SECRET:?missing}"
+          : "${ARM_EXECUTOR_PRIVATE_KEY:?missing}"
+
+          infisical_login() {
+            local resp token
+            resp=$(curl -s -X POST "${INFISICAL_ADDRESS}/api/v1/auth/universal-auth/login" \
+              -H "Content-Type: application/json" \
+              -d "$(python3 -c 'import json,sys; print(json.dumps({"clientId": sys.argv[1], "clientSecret": sys.argv[2]}))' "$INFISICAL_CLIENT_ID" "$INFISICAL_CLIENT_SECRET")" 2>/dev/null)
+            token=$(echo "$resp" | python3 -c 'import sys,json; print(json.load(sys.stdin)["accessToken"])' 2>/dev/null)
+            echo "$token"
+          }
+
+          access_token=$(infisical_login)
+          if [ -z "$access_token" ]; then
+            echo '{"status":"error","reason":"infisical universal-auth login failed - key was NOT pushed"}'
+            exit 1
+          fi
+
+          # ensure the target folder exists - batch/raw 404s otherwise and does not auto-create it
+          set +e
+          curl -s -o /dev/null -X POST "${INFISICAL_ADDRESS}/api/v1/folders" \
+            -H "Authorization: Bearer ${access_token}" -H "Content-Type: application/json" \
+            -d "$(python3 -c 'import json,sys; print(json.dumps({"workspaceId": sys.argv[1], "environment": sys.argv[2], "name": sys.argv[3], "path": "/"}))' "$INFISICAL_PROJECT_ID" "$INFISICAL_ENV_SLUG" "$INFISICAL_FOLDER_NAME")"
+          set -e
+
+          secrets_body=$(ARM_EXECUTOR_PRIVATE_KEY="$ARM_EXECUTOR_PRIVATE_KEY" python3 - "$INFISICAL_SECRET_PATH" "$INFISICAL_ENV_SLUG" "$INFISICAL_PROJECT_ID" <<'PYEOF'
+          import json
+          import os
+          import sys
+
+          secret_path, env_slug, project_id = sys.argv[1:4]
+          body = {
+              "workspaceId": project_id,
+              "environment": env_slug,
+              "secretPath": secret_path,
+              "secrets": [
+                  {"secretKey": "ARM_EXECUTOR_SSH_PRIVATE_KEY", "secretValue": os.environ["ARM_EXECUTOR_PRIVATE_KEY"]},
+                  {"secretKey": "ARM_EXECUTOR_SSH_USER", "secretValue": "{{ arm_executor_user }}"},
+                  {"secretKey": "ARM_EXECUTOR_SSH_HOST", "secretValue": "{{ ansible_host }}"},
+                  {"secretKey": "ARM_EXECUTOR_SSH_PORT", "secretValue": "{{ ssh_port }}"},
+              ],
+          }
+          print(json.dumps(body))
+          PYEOF
+          )
+
+          http_code=$(curl -s -o /root/.arm_executor_infisical_resp.log -w '%{http_code}' \
+            -X POST "${INFISICAL_ADDRESS}/api/v3/secrets/batch/raw" \
+            -H "Authorization: Bearer ${access_token}" \
+            -H "Content-Type: application/json" \
+            -d "$secrets_body")
+
+          if [ "$http_code" != "200" ]; then
+            echo '{"status":"error","reason":"infisical push failed (http '"$http_code"') - see /root/.arm_executor_infisical_resp.log"}'
+            exit 1
+          fi
+          rm -f /root/.arm_executor_infisical_resp.log
+          echo '{"status":"success","infisical_secret_path":"'"$INFISICAL_SECRET_PATH"'"}'
+
+    - name: Push the private key to Infisical (project airdr, path /arm-executor-credentials)
+      ansible.builtin.command: bash /root/.push_arm_executor_key_to_infisical.sh
+      environment:
+        INFISICAL_PROJECT_ID: "{{ INFISICAL_PROJECT_ID }}"
+        INFISICAL_CLIENT_ID: "{{ INFISICAL_CLIENT_ID }}"
+        INFISICAL_CLIENT_SECRET: "{{ INFISICAL_CLIENT_SECRET }}"
+        ARM_EXECUTOR_PRIVATE_KEY: "{{ arm_executor_privkey_b64.content | b64decode }}"
+      register: infisical_push_result
+      changed_when: "'\"status\":\"success\"' in infisical_push_result.stdout"
+      no_log: true
+
+    - name: Fail loudly if the Infisical push failed (sudoers/account are already live at this point either way)
+      ansible.builtin.fail:
+        msg: "Infisical push failed: {{ infisical_push_result.stdout }}"
+      when: "'\"status\":\"success\"' not in infisical_push_result.stdout"
+
+    - name: Show what was granted (for audit — see arm-deployment-task.md's reporting requirement)
+      ansible.builtin.debug:
+        msg:
+          arm_executor_user: "{{ arm_executor_user }}"
+          sudoers_file: "/etc/sudoers.d/{{ arm_executor_user }}"
+          sudoers_scope: "ARM_ISOLATE, ARM_BLOCK_IP, ARM_BLOCKLIST, ARM_POLICY, ARM_KILL, ARM_QUARANTINE, ARM_LOCK, ARM_SNAPSHOT (see the file itself for exact commands)"
+          infisical_path: "{{ infisical_secret_path }}"
+          infisical_push_status: "success"
+
+- name: Wire the arm-executor key into the ARM backend on airdr-detect
+  hosts: airdr-detect
+  become: true
+  gather_facts: false
+
+  vars:
+    infisical_address: "https://infisical.example.com"
+    infisical_env: "prod"
+    infisical_secret_path: "/arm-executor-credentials"
+    airdr_dir: /opt/airdr-detect
+    arm_executor_ssh_key_path: "{{ airdr_dir }}/.ssh/arm_executor_ed25519"
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+
+  tasks:
+    - name: Fail fast if Infisical machine-identity credentials aren't set
+      ansible.builtin.assert:
+        that:
+          - infisical_project_id_var is defined
+          - infisical_client_id_var is defined
+          - infisical_client_secret_var is defined
+        fail_msg: >-
+          INFISICAL_PROJECT_ID / INFISICAL_CLIENT_ID / INFISICAL_CLIENT_SECRET must be set via
+          this template's Semaphore Environment (Extra Variables) — never as -e/CLI args.
+      vars:
+        infisical_project_id_var: "{{ INFISICAL_PROJECT_ID | default(omit) }}"
+        infisical_client_id_var: "{{ INFISICAL_CLIENT_ID | default(omit) }}"
+        infisical_client_secret_var: "{{ INFISICAL_CLIENT_SECRET | default(omit) }}"
+
+    - name: Write the Infisical fetch script (private key never touches this playbook's own stdout/log)
+      ansible.builtin.copy:
+        dest: /root/.fetch_arm_executor_key_from_infisical.sh
+        mode: "0700"
+        owner: root
+        group: root
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          INFISICAL_ADDRESS="{{ infisical_address }}"
+          INFISICAL_ENV_SLUG="{{ infisical_env }}"
+          INFISICAL_SECRET_PATH="{{ infisical_secret_path }}"
+          DEST="{{ arm_executor_ssh_key_path }}"
+
+          : "${INFISICAL_PROJECT_ID:?missing}"
+          : "${INFISICAL_CLIENT_ID:?missing}"
+          : "${INFISICAL_CLIENT_SECRET:?missing}"
+
+          resp=$(curl -s -X POST "${INFISICAL_ADDRESS}/api/v1/auth/universal-auth/login" \
+            -H "Content-Type: application/json" \
+            -d "$(python3 -c 'import json,sys; print(json.dumps({"clientId": sys.argv[1], "clientSecret": sys.argv[2]}))' "$INFISICAL_CLIENT_ID" "$INFISICAL_CLIENT_SECRET")" 2>/dev/null)
+          access_token=$(echo "$resp" | python3 -c 'import sys,json; print(json.load(sys.stdin)["accessToken"])' 2>/dev/null)
+          if [ -z "$access_token" ]; then
+            echo '{"status":"error","reason":"infisical universal-auth login failed"}'
+            exit 1
+          fi
+
+          raw=$(curl -s -G "${INFISICAL_ADDRESS}/api/v3/secrets/raw" \
+            --data-urlencode "workspaceId=${INFISICAL_PROJECT_ID}" \
+            --data-urlencode "environment=${INFISICAL_ENV_SLUG}" \
+            --data-urlencode "secretPath=${INFISICAL_SECRET_PATH}" \
+            -H "Authorization: Bearer ${access_token}")
+
+          key=$(echo "$raw" | python3 -c '
+          import sys, json
+          d = json.load(sys.stdin)
+          for s in d.get("secrets", []):
+              if s.get("secretKey") == "ARM_EXECUTOR_SSH_PRIVATE_KEY":
+                  print(s["secretValue"])
+                  break
+          ')
+          if [ -z "$key" ]; then
+            echo '{"status":"error","reason":"ARM_EXECUTOR_SSH_PRIVATE_KEY not found at '"$INFISICAL_SECRET_PATH"'"}'
+            exit 1
+          fi
+
+          umask 077
+          printf '%s\n' "$key" > "$DEST"
+          chmod 600 "$DEST"
+          chown {{ ssh_user }}:{{ ssh_user }} "$DEST"
+          echo '{"status":"success"}'
+
+    - name: Fetch the private key and write it to the ARM backend's key path
+      ansible.builtin.command: bash /root/.fetch_arm_executor_key_from_infisical.sh
+      environment:
+        INFISICAL_PROJECT_ID: "{{ INFISICAL_PROJECT_ID }}"
+        INFISICAL_CLIENT_ID: "{{ INFISICAL_CLIENT_ID }}"
+        INFISICAL_CLIENT_SECRET: "{{ INFISICAL_CLIENT_SECRET }}"
+      register: infisical_fetch_result
+      changed_when: "'\"status\":\"success\"' in infisical_fetch_result.stdout"
+      no_log: true
+
+    - name: Fail loudly if the Infisical fetch failed
+      ansible.builtin.fail:
+        msg: "Infisical fetch failed: {{ infisical_fetch_result.stdout }}"
+      when: "'\"status\":\"success\"' not in infisical_fetch_result.stdout"
+
+    - name: Restart the ARM backend so it picks up the new key
+      ansible.builtin.systemd:
+        name: airdr-flask
+        state: restarted

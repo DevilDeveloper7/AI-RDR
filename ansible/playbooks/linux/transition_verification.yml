@@ -1,0 +1,318 @@
+---
+# ───────────────────────────────────────────────
+# Transition Verification: Bootstrap → Production
+# Validates all prerequisites before switching from password to key-based auth
+# ───────────────────────────────────────────────
+- name: Transition verification (Bootstrap → Production)
+  hosts: all
+  gather_facts: true
+  become: false
+  vars:
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default('test_user') }}"
+    # This check verifies the freshly-generated per-host key (id_<ssh_key_name>),
+    # not whatever key the current connection happens to use — during bootstrap
+    # that's the shared root key, which is always defined and would otherwise
+    # shadow the per-host path via `default()` (it only falls back on undefined,
+    # not on "wrong").
+    ssh_key_path: "{{ lookup('env', 'HOME') }}/.ssh/id_{{ hostvars[inventory_hostname].ssh_key_name | default(inventory_hostname) }}"
+    verification_results: []
+
+  tasks:
+    - name: Display transition verification header
+      debug:
+        msg:
+          - "═══════════════════════════════════════════════════"
+          - "     TRANSITION VERIFICATION: Bootstrap → Production"
+          - "═══════════════════════════════════════════════════"
+          - "Host: {{ inventory_hostname }} ({{ ansible_host }})"
+          - "Verifying readiness for key-based authentication..."
+      tags: [always]
+
+    # ───────────────────────────────────────────────
+    # Check 1: User exists
+    # ───────────────────────────────────────────────
+    - name: Check if SSH user exists
+      become: true
+      getent:
+        database: passwd
+        key: "{{ ssh_user }}"
+      register: user_check
+      failed_when: false
+      tags: [user_check]
+
+    - name: Verify user exists
+      assert:
+        that:
+          - user_check.ansible_facts is defined
+          - user_check.ansible_facts.getent_passwd is defined
+        fail_msg: "✗ User {{ ssh_user }} does not exist"
+        success_msg: "✓ User {{ ssh_user }} exists"
+      tags: [user_check]
+
+    # ───────────────────────────────────────────────
+    # Check 2: User has sudo permissions
+    # ───────────────────────────────────────────────
+    - name: Check sudo permissions for user
+      become: true
+      stat:
+        path: "/etc/sudoers.d/{{ ssh_user }}"
+      register: sudoers_check
+      tags: [sudo_check]
+
+    - name: Verify sudo file exists
+      assert:
+        that:
+          - sudoers_check.stat.exists
+        fail_msg: "✗ Sudo configuration missing for {{ ssh_user }}"
+        success_msg: "✓ Sudo permissions configured"
+      tags: [sudo_check]
+
+    - name: Verify sudo content
+      become: true
+      command: cat /etc/sudoers.d/{{ ssh_user }}
+      register: sudoers_content
+      changed_when: false
+      tags: [sudo_check]
+
+    - name: Check NOPASSWD sudo
+      assert:
+        that:
+          - "'NOPASSWD' in sudoers_content.stdout"
+        fail_msg: "✗ NOPASSWD not configured for {{ ssh_user }}"
+        success_msg: "✓ Passwordless sudo enabled"
+      tags: [sudo_check]
+
+    # ───────────────────────────────────────────────
+    # Check 3: SSH keys exist locally
+    # ───────────────────────────────────────────────
+    - name: Check if SSH private key exists locally
+      delegate_to: localhost
+      stat:
+        path: "{{ ssh_key_path }}"
+      register: private_key_check
+      tags: [key_check]
+
+    - name: Check if SSH public key exists locally
+      delegate_to: localhost
+      stat:
+        path: "{{ ssh_key_path }}.pub"
+      register: public_key_check
+      tags: [key_check]
+
+    - name: Verify SSH keys exist
+      assert:
+        that:
+          - private_key_check.stat.exists
+          - public_key_check.stat.exists
+        fail_msg: "✗ SSH keys not found at {{ ssh_key_path }}"
+        success_msg: "✓ SSH keys exist locally"
+      tags: [key_check]
+
+    - name: Verify private key permissions
+      delegate_to: localhost
+      assert:
+        that:
+          - private_key_check.stat.mode == '0600'
+        fail_msg: "✗ Private key has incorrect permissions (should be 0600)"
+        success_msg: "✓ Private key permissions correct (0600)"
+      tags: [key_check]
+
+    # ───────────────────────────────────────────────
+    # Check 4: SSH directory and authorized_keys
+    # ───────────────────────────────────────────────
+    - name: Check SSH directory exists
+      become: true
+      stat:
+        path: "/home/{{ ssh_user }}/.ssh"
+      register: ssh_dir_check
+      tags: [remote_check]
+
+    - name: Verify SSH directory
+      assert:
+        that:
+          - ssh_dir_check.stat.exists
+          - ssh_dir_check.stat.isdir
+          - ssh_dir_check.stat.mode == '0700'
+        fail_msg: "✗ SSH directory missing or wrong permissions"
+        success_msg: "✓ SSH directory configured correctly"
+      tags: [remote_check]
+
+    - name: Check authorized_keys file
+      become: true
+      stat:
+        path: "/home/{{ ssh_user }}/.ssh/authorized_keys"
+      register: authkeys_check
+      tags: [remote_check]
+
+    - name: Verify authorized_keys file
+      assert:
+        that:
+          - authkeys_check.stat.exists
+          - authkeys_check.stat.size > 0
+          - authkeys_check.stat.mode in ['0600', '0644']
+        fail_msg: "✗ authorized_keys missing, empty, or wrong permissions"
+        success_msg: "✓ authorized_keys file configured correctly"
+      tags: [remote_check]
+
+    # ───────────────────────────────────────────────
+    # Check 5: Public key is in authorized_keys
+    # ───────────────────────────────────────────────
+    - name: Read local public key
+      delegate_to: localhost
+      slurp:
+        path: "{{ ssh_key_path }}.pub"
+      register: local_pubkey
+      tags: [key_match]
+
+    - name: Read remote authorized_keys
+      become: true
+      slurp:
+        path: "/home/{{ ssh_user }}/.ssh/authorized_keys"
+      register: remote_authkeys
+      tags: [key_match]
+
+    - name: Verify public key is authorized
+      assert:
+        that:
+          - (local_pubkey.content | b64decode | trim) in (remote_authkeys.content | b64decode)
+        fail_msg: "✗ Public key NOT found in authorized_keys"
+        success_msg: "✓ Public key correctly installed"
+      tags: [key_match]
+
+    # ───────────────────────────────────────────────
+    # Check 6: Test actual SSH connection with keys
+    # ───────────────────────────────────────────────
+    - name: Test SSH key-based connection (actual connection)
+      delegate_to: localhost
+      command: >
+        ssh -i {{ ssh_key_path }}
+        -o StrictHostKeyChecking=no
+        -o PasswordAuthentication=no
+        -o PubkeyAuthentication=yes
+        -o ConnectTimeout=10
+        -o BatchMode=yes
+        {{ ssh_user }}@{{ ansible_host }}
+        "echo 'CONNECTION_SUCCESS'"
+      register: connection_test
+      changed_when: false
+      failed_when: connection_test.rc != 0
+      tags: [connection_test]
+
+    - name: Verify connection succeeded
+      assert:
+        that:
+          - connection_test.rc == 0
+          - "'CONNECTION_SUCCESS' in connection_test.stdout"
+        fail_msg: "✗ SSH key connection FAILED - Cannot proceed to production"
+        success_msg: "✓ SSH key connection SUCCESSFUL"
+      tags: [connection_test]
+
+    # ───────────────────────────────────────────────
+    # Check 7: Test sudo without password
+    # ───────────────────────────────────────────────
+    - name: Test sudo access via SSH key connection
+      delegate_to: localhost
+      command: >
+        ssh -i {{ ssh_key_path }}
+        -o StrictHostKeyChecking=no
+        -o PasswordAuthentication=no
+        {{ ssh_user }}@{{ ansible_host }}
+        "sudo -n whoami"
+      register: sudo_test
+      changed_when: false
+      failed_when: sudo_test.rc != 0
+      tags: [sudo_test]
+
+    - name: Verify sudo works
+      assert:
+        that:
+          - sudo_test.rc == 0
+          - "'root' in sudo_test.stdout"
+        fail_msg: "✗ Sudo access FAILED via SSH key"
+        success_msg: "✓ Sudo access works via SSH key"
+      tags: [sudo_test]
+
+    # ───────────────────────────────────────────────
+    # Check 8: Python is available for Ansible
+    # ───────────────────────────────────────────────
+    - name: Verify Python3 is available
+      raw: which python3
+      register: python_check
+      changed_when: false
+      tags: [python_check]
+
+    - name: Confirm Python availability
+      assert:
+        that:
+          - python_check.rc == 0
+        fail_msg: "✗ Python3 not found - Ansible may fail"
+        success_msg: "✓ Python3 available for Ansible"
+      tags: [python_check]
+
+    # ───────────────────────────────────────────────
+    # Check 9: Known hosts entry
+    # ───────────────────────────────────────────────
+    - name: Check known_hosts entry
+      delegate_to: localhost
+      command: ssh-keygen -F {{ ansible_host }}
+      register: known_hosts_check
+      changed_when: false
+      failed_when: false
+      tags: [known_hosts]
+
+    - name: Display known_hosts status
+      debug:
+        msg: "{{ '✓ Host in known_hosts' if known_hosts_check.rc == 0 else '⚠️  Host NOT in known_hosts (will be added)' }}"
+      tags: [known_hosts]
+
+    # ───────────────────────────────────────────────
+    # Final verification summary
+    # ───────────────────────────────────────────────
+    - name: Display verification summary
+      debug:
+        msg:
+          - "═══════════════════════════════════════════════════"
+          - "     ✓ ALL TRANSITION CHECKS PASSED"
+          - "═══════════════════════════════════════════════════"
+          - "Host: {{ inventory_hostname }}"
+          - "User: {{ ssh_user }}"
+          - "Key:  {{ ssh_key_path | basename }}"
+          - ""
+          - "✓ User exists and has sudo privileges"
+          - "✓ SSH keys exist locally with correct permissions"
+          - "✓ SSH directory configured correctly on remote"
+          - "✓ authorized_keys contains correct public key"
+          - "✓ SSH key-based connection works"
+          - "✓ Sudo access works via SSH key"
+          - "✓ Python3 available for Ansible"
+          - ""
+          - "READY TO PROCEED TO PRODUCTION PHASE"
+          - "Safe to disable password authentication"
+          - "═══════════════════════════════════════════════════"
+      tags: [always]
+
+# ───────────────────────────────────────────────
+# Global summary for all hosts
+# ───────────────────────────────────────────────
+- name: Global transition verification summary
+  hosts: all
+  gather_facts: false
+  run_once: true
+  tasks:
+    - name: Display global summary
+      debug:
+        msg:
+          - ""
+          - "╔═══════════════════════════════════════════════════╗"
+          - "║  TRANSITION VERIFICATION COMPLETE FOR ALL HOSTS   ║"
+          - "╚═══════════════════════════════════════════════════╝"
+          - ""
+          - "All hosts verified: {{ ansible_play_hosts | length }} host(s)"
+          - "{{ ansible_play_hosts }}"
+          - ""
+          - "✓ Bootstrap phase complete"
+          - "✓ All prerequisites met"
+          - "✓ Ready for production phase"
+          - ""
+          - "Next step: SSH hardening and production configuration"
+          - ""

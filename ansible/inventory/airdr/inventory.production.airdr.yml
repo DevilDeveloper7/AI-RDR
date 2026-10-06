@@ -1,0 +1,58 @@
+# AI-RDR test/demo environment — production phase, key-based ansible-user access.
+# Only run after inventory.bootstrap.airdr.yml + transition_verification.yml pass.
+#
+# Connects as ansible-user (passwordless sudo, configured in bootstrap) using
+# the SHARED bootstrap key (/ansible-ssh-keys/id_rsa), not a per-host key —
+# deliberately, not by mistake. The per-host key setup_ssh_key.yml generates
+# during bootstrap lives only in Semaphore's ephemeral task workspace and does
+# not durably persist to the /ansible-ssh-keys/ mount; a template pointed at
+# /ansible-ssh-keys/id_<host> will fail "no such identity" the moment it needs
+# a fresh connection. Confirmed the hard way 2026-09-21: production hardening
+# (which used to connect as root with a per-host key, matching the rest of
+# this repo's other shared-fleet inventory groups' convention) got through its SSH-hardening play only
+# because a stale connection happened to still be authenticated, then hit a
+# hard lockout on the very next play once PermitRootLogin was set to no and a
+# fresh connection was required — recovered via an offline qemu-nbd disk
+# mount on the Proxmox host, not something to repeat routinely.
+# playbooks/linux/authorize_shared_bootstrap_key.yml (run during bootstrap)
+# is what makes this key valid for ansible-user, not just root.
+#
+# infisical_stacks intentionally omitted: no API keys (IBM X-Force / Kaggle /
+# abuse.ch) are registered yet. When they are, follow the same pattern as every
+# other project here (see inventory/homelab's infisical_stacks or
+# playbooks/ubuntu/setup_infisical_agent_project.yml for the standalone-project
+# form) — create an Infisical project/secret path (e.g. /airdr) and add an
+# infisical_stacks block per host, then run setup_infisical_agent_project.yml.
+# Do not hardcode plaintext keys into this inventory or any playbook.
+---
+all:
+  children:
+    airdr:
+      hosts:
+        airdr-siem:
+          ansible_host: 192.168.70.62
+          ansible_user: ansible-user
+          ssh_user: ansible-user
+          ssh_key_name: airdr-siem
+          devops_key_name: airdr-siem-devops
+          ansible_ssh_private_key_file: /ansible-ssh-keys/id_rsa
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+          ansible_python_interpreter: /usr/bin/python3
+        airdr-detect:
+          ansible_host: 192.168.70.63
+          ansible_user: ansible-user
+          ssh_user: ansible-user
+          ssh_key_name: airdr-detect
+          devops_key_name: airdr-detect-devops
+          ansible_ssh_private_key_file: /ansible-ssh-keys/id_rsa
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+          ansible_python_interpreter: /usr/bin/python3
+        airdr-target:
+          ansible_host: 192.168.70.64
+          ansible_user: ansible-user
+          ssh_user: ansible-user
+          ssh_key_name: airdr-target
+          devops_key_name: airdr-target-devops
+          ansible_ssh_private_key_file: /ansible-ssh-keys/id_rsa
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+          ansible_python_interpreter: /usr/bin/python3

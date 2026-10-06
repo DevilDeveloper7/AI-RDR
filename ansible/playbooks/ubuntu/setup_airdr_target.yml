@@ -1,0 +1,249 @@
+---
+# AI-RDR capstone project — simulated protected endpoint. Sets up:
+#   - Wazuh agent, enrolled to airdr-siem
+#   - auditd, with watch rules on the honey-file decoy paths (this is what
+#     "inotify watching" means in practice on Linux — auditd's -w watches
+#     are the standard mechanism, not a raw inotify(7) listener process)
+#   - a handful of decoy files with realistic sensitive-document names under
+#     /srv/finance and /srv/records
+#
+# Explicitly does NOT set up any malware/detonation or network isolation —
+# both are out of scope for this pass per the brief.
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_target.yml --limit airdr-target -e wazuh_manager_ip=192.168.70.62
+
+- name: Set up AI-RDR target host (Wazuh agent, honeyfiles, auditd)
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    wazuh_manager_ip: 192.168.70.62 # airdr-siem
+    wazuh_agent_version: "4.9.2-1"
+    decoy_paths:
+      - /srv/finance
+      - /srv/records
+    decoy_files:
+      - path: /srv/finance/Q3_2026_Payroll_Master.xlsx
+      - path: /srv/finance/Vendor_Payments_2026.xlsx
+      - path: /srv/finance/Executive_Compensation_2026.xlsx
+      - path: /srv/records/Employee_SSN_Records.pdf
+      - path: /srv/records/Client_Contracts_Signed.pdf
+      - path: /srv/records/patient_database_backup.sql
+      - path: /srv/records/customer_pii_export.sql
+
+  tasks:
+    - name: Fail fast if wazuh_manager_ip wasn't overridden
+      ansible.builtin.assert:
+        that: wazuh_manager_ip is defined
+        fail_msg: "Pass -e wazuh_manager_ip=<airdr-siem IP> if it ever changes from the default."
+
+    # ---------------------------------------------------------------
+    # Wazuh agent
+    # ---------------------------------------------------------------
+    - name: Add Wazuh GPG key
+      ansible.builtin.apt_key:
+        url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+        state: present
+
+    - name: Add Wazuh apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb https://packages.wazuh.com/4.x/apt/ stable main"
+        filename: wazuh
+        state: present
+
+    - name: Install Wazuh agent (pinned)
+      ansible.builtin.apt:
+        name: "wazuh-agent={{ wazuh_agent_version }}"
+        state: present
+        update_cache: true
+      environment:
+        WAZUH_MANAGER: "{{ wazuh_manager_ip }}"
+
+    - name: Configure Wazuh agent manager address
+      ansible.builtin.lineinfile:
+        path: /var/ossec/etc/ossec.conf
+        regexp: "<address>.*</address>"
+        line: "    <address>{{ wazuh_manager_ip }}</address>"
+        backrefs: true
+
+    # state: started (not restarted) - this task runs on every play, and an
+    # unconditional restart here would fire BEFORE the auditd/logcollector
+    # handlers below (which only run when something actually changed),
+    # breaking the ordering the reliability fix further down depends on.
+    # See "restart wazuh-agent only after auditd/logcollector state is settled"
+    # below for the handler that actually owns restarting this service.
+    - name: Enable and start Wazuh agent
+      ansible.builtin.systemd:
+        name: wazuh-agent
+        daemon_reload: true
+        enabled: true
+        state: started
+
+    # ---------------------------------------------------------------
+    # auditd + watches (the "inotify watching" mechanism)
+    # ---------------------------------------------------------------
+    - name: Install auditd
+      ansible.builtin.apt:
+        name: auditd
+        state: present
+
+    # Ubuntu 22.04's auditd package defaults to log_format = ENRICHED. Confirmed live
+    # (2026-09-22) this breaks detection end-to-end even though the -w watch rules below
+    # fire correctly: ENRICHED format appends resolved UID/GID names directly onto the
+    # SYSCALL line with no separator before the enriched fields (e.g.
+    # `key="airdr_honeyfile_access"ARCH=x86_64 SYSCALL=openat ...`), which this auditd
+    # version's own `ausearch`/auparse fails to index - `ausearch -k <key>` returns
+    # "<no matches>" for events objectively present in /var/log/audit/audit.log (verified
+    # via direct grep). Wazuh's auditd decoder has the same limitation (confirmed against
+    # wazuh/wazuh#3396: Wazuh only processes the RAW log_format and discards/mishandles
+    # the enriched portion), so this single setting is what breaks BOTH local
+    # investigation (ausearch) and Wazuh's ingestion (gap 2 below) - not the watch rules
+    # themselves, which were never the actual problem despite the directory-level `-w`
+    # rule being a plausible-looking suspect.
+    - name: Ensure auditd log_format is RAW (not the distro-default ENRICHED, which breaks ausearch/Wazuh parsing)
+      ansible.builtin.lineinfile:
+        path: /etc/audit/auditd.conf
+        regexp: "^log_format\\s*="
+        line: "log_format = RAW"
+      notify:
+        - restart auditd
+        - stop wazuh-agent
+        - reset wazuh-agent logcollector state for audit.log
+        - start wazuh-agent
+
+    # Reliability fix (2026-09-22): the distro default here is
+    # `max_log_file_action = ROTATE` with `max_log_file = 8` (MB) - confirmed
+    # live by deliberately forcing it (temporarily set max_log_file=1,
+    # generated volume, watched `stat` inode change 525745->525868 and size
+    # drop from ~830KB to ~199KB). A ROTATE replaces audit.log with a new,
+    # empty file at the same path. Wazuh's logcollector persists its read
+    # position per path in file_status.json keyed by a content hash + byte
+    # offset, NOT by inode - if the agent's cached offset survives past a
+    # rotation (e.g. because the agent was mid-restart when rotation fired,
+    # which is exactly what happened applying the original honeyfile fix:
+    # ossec.log shows repeated connect/reconnect cycles at 07:25/07:35/08:08/
+    # 08:12-08:13 that day), the offset can end up pointing PAST the new
+    # file's end, and the collector silently stalls waiting for the file to
+    # grow back past a position it already believes it consumed - it does
+    # not detect "the offset is now impossible" and reset on its own. This
+    # is a real, reproducible failure mode for a "must fire on
+    # ransomware-speed access" detection path, not a one-off. Fix: disable
+    # auditd's own automatic rotation (`keep_logs` = never rotate/delete -
+    # the CIS Linux benchmark's own recommended setting for audit logs, for
+    # this exact data-loss reason) so the trigger doesn't fire during normal
+    # operation, and pair it with the logcollector-state-reset handlers below
+    # so any FUTURE manual auditd restart/config change still forces a clean
+    # resync regardless.
+    - name: Ensure auditd never auto-rotates/deletes audit.log out from under the logcollector (CIS-recommended keep_logs, not size-triggered ROTATE)
+      ansible.builtin.lineinfile:
+        path: /etc/audit/auditd.conf
+        regexp: "^max_log_file_action\\s*="
+        line: "max_log_file_action = keep_logs"
+      notify:
+        - restart auditd
+        - stop wazuh-agent
+        - reset wazuh-agent logcollector state for audit.log
+        - start wazuh-agent
+
+    - name: Enable and start auditd
+      ansible.builtin.systemd:
+        name: auditd
+        enabled: true
+        state: started
+
+    - name: Add audit watch rules for decoy paths
+      ansible.builtin.copy:
+        dest: /etc/audit/rules.d/airdr-honeyfiles.rules
+        owner: root
+        group: root
+        mode: "0640"
+        content: |
+          {% for p in decoy_paths %}
+          -w {{ p }} -p rwxa -k airdr_honeyfile_access
+          {% endfor %}
+      notify: reload auditd rules
+
+    # ---------------------------------------------------------------
+    # Wazuh agent: ship auditd events to the manager (was missing entirely -
+    # confirmed live 2026-09-22 via `grep -i audit /var/ossec/etc/ossec.conf`
+    # returning nothing, so even correctly-logged audit events never left this host)
+    # ---------------------------------------------------------------
+    - name: Add <localfile> stanza so the Wazuh agent ships auditd events to the manager
+      ansible.builtin.blockinfile:
+        path: /var/ossec/etc/ossec.conf
+        marker: "  <!-- {mark} ANSIBLE MANAGED BLOCK: airdr auditd localfile -->"
+        insertbefore: "</ossec_config>"
+        block: |2
+              <localfile>
+                <log_format>audit</log_format>
+                <location>/var/log/audit/audit.log</location>
+              </localfile>
+      notify:
+        - stop wazuh-agent
+        - reset wazuh-agent logcollector state for audit.log
+        - start wazuh-agent
+
+    # ---------------------------------------------------------------
+    # Decoy files
+    # ---------------------------------------------------------------
+    - name: Create decoy directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+      loop: "{{ decoy_paths }}"
+
+    - name: Create decoy files with realistic sensitive-document names
+      ansible.builtin.copy:
+        dest: "{{ item.path }}"
+        content: "This is a decoy file placed by the AI-RDR honey-file detection system. Any access to this file is a strong ransomware/insider-threat indicator.\n"
+        owner: root
+        group: root
+        mode: "0640"
+      loop: "{{ decoy_files }}"
+
+  handlers:
+    # Ansible runs handlers in the order they're LISTED here, not the order
+    # they're notified in - this list's order is load-bearing: auditd must
+    # be fully restarted, in its final state, before wazuh-agent's
+    # logcollector state gets reset and the agent restarts. See the
+    # reliability-fix comments on the auditd.conf tasks above for why.
+    - name: reload auditd rules
+      ansible.builtin.command: augenrules --load
+
+    # log_format is only read at auditd startup - augenrules --load (rule reload) does
+    # not pick it up, a real restart is required
+    - name: restart auditd
+      ansible.builtin.systemd:
+        name: auditd
+        state: restarted
+
+    - name: stop wazuh-agent
+      ansible.builtin.systemd:
+        name: wazuh-agent
+        state: stopped
+
+    # Belt-and-braces for the offset-survives-a-rotation failure mode: drop
+    # any persisted read position for audit.log specifically (leaving other
+    # tracked files like dpkg.log alone) so a restart ALWAYS re-opens
+    # audit.log fresh instead of trusting a potentially-stale offset/hash.
+    # Must run with the agent stopped, otherwise the running process can
+    # flush its own in-memory state back over this edit before it exits.
+    - name: reset wazuh-agent logcollector state for audit.log
+      ansible.builtin.shell: |
+        set -e
+        f=/var/ossec/queue/logcollector/file_status.json
+        if [ -f "$f" ]; then
+          python3 -c "import json,sys; p=sys.argv[1]; d=json.load(open(p)); d['files']=[e for e in d.get('files', []) if e.get('path') != '/var/log/audit/audit.log']; json.dump(d, open(p, 'w'))" "$f"
+        fi
+      args:
+        executable: /bin/bash
+
+    - name: start wazuh-agent
+      ansible.builtin.systemd:
+        name: wazuh-agent
+        state: started
