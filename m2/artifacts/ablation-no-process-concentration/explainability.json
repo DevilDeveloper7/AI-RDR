@@ -1,0 +1,245 @@
+{
+  "method": "LinearSHAP on held-out test windows",
+  "sample_windows": 335,
+  "global_mean_absolute_shap": [
+    {
+      "feature": "write_ratio",
+      "mean_abs_shap": 1.8405836577101697
+    },
+    {
+      "feature": "metadata_ratio",
+      "mean_abs_shap": 1.78893863823819
+    },
+    {
+      "feature": "read_ratio",
+      "mean_abs_shap": 1.7487465979280747
+    },
+    {
+      "feature": "network_ratio",
+      "mean_abs_shap": 1.4749333649390046
+    },
+    {
+      "feature": "open_ratio",
+      "mean_abs_shap": 1.2380310047702228
+    },
+    {
+      "feature": "process_count",
+      "mean_abs_shap": 0.6996078746433936
+    },
+    {
+      "feature": "memory_ratio",
+      "mean_abs_shap": 0.42873879260755693
+    },
+    {
+      "feature": "write_bytes_requested",
+      "mean_abs_shap": 0.39370932448451673
+    },
+    {
+      "feature": "unique_syscalls",
+      "mean_abs_shap": 0.3918307517735792
+    },
+    {
+      "feature": "rename_delete_ratio",
+      "mean_abs_shap": 0.2666913078608751
+    },
+    {
+      "feature": "rename_count",
+      "mean_abs_shap": 0.26341431990444497
+    },
+    {
+      "feature": "read_bytes_requested",
+      "mean_abs_shap": 0.2102129097556073
+    },
+    {
+      "feature": "open_to_read",
+      "mean_abs_shap": 0.16328017783784568
+    },
+    {
+      "feature": "write_to_sync",
+      "mean_abs_shap": 0.13686962832837388
+    },
+    {
+      "feature": "sync_ratio",
+      "mean_abs_shap": 0.13358710909530072
+    }
+  ],
+  "local_examples": {
+    "true_positive": {
+      "window_id": "b64681bcb669f1425acf",
+      "run_id": "ftrace_results__parsed__out_exec_parsed__asymm_35",
+      "probability": 0.999999272605498,
+      "top_contributors": [
+        {
+          "feature": "metadata_ratio",
+          "value": 0.4303030303030303,
+          "shap_value": 14.69622925184186
+        },
+        {
+          "feature": "open_ratio",
+          "value": 0.08242424242424243,
+          "shap_value": 2.9794436965285627
+        },
+        {
+          "feature": "write_ratio",
+          "value": 0.0036363636363636364,
+          "shap_value": 2.040756858395711
+        },
+        {
+          "feature": "network_ratio",
+          "value": 0.0,
+          "shap_value": 1.3401168105077086
+        },
+        {
+          "feature": "process_count",
+          "value": 0.0,
+          "shap_value": 0.5292446939746672
+        },
+        {
+          "feature": "read_ratio",
+          "value": 0.1393939393939394,
+          "shap_value": 0.4101265499672237
+        },
+        {
+          "feature": "unique_syscalls",
+          "value": 18.0,
+          "shap_value": 0.3554057746874827
+        },
+        {
+          "feature": "write_bytes_requested",
+          "value": 180.0,
+          "shap_value": -0.2200205244427488
+        },
+        {
+          "feature": "rename_count",
+          "value": 0.0,
+          "shap_value": -0.1655660090995592
+        },
+        {
+          "feature": "memory_ratio",
+          "value": 0.04242424242424243,
+          "shap_value": -0.14702387517565815
+        }
+      ]
+    },
+    "false_positive": {
+      "window_id": "21e937e9f129de29f3f2",
+      "run_id": "compression__output__syscall_output__compression_syscall_Zip_2",
+      "probability": 0.9125682868459808,
+      "top_contributors": [
+        {
+          "feature": "metadata_ratio",
+          "value": 0.37222588442100635,
+          "shap_value": 12.53764522088132
+        },
+        {
+          "feature": "write_ratio",
+          "value": 0.24972533509118874,
+          "shap_value": -2.1694274798654845
+        },
+        {
+          "feature": "network_ratio",
+          "value": 0.0047242364315535045,
+          "shap_value": 1.196826563817397
+        },
+        {
+          "feature": "unique_syscalls",
+          "value": 84.0,
+          "shap_value": -0.6582839888982501
+        },
+        {
+          "feature": "open_to_read",
+          "value": 147.0,
+          "shap_value": -0.42624586809720816
+        },
+        {
+          "feature": "read_ratio",
+          "value": 0.18105910788837618,
+          "shap_value": -0.3390894373954483
+        },
+        {
+          "feature": "process_count",
+          "value": 5.0,
+          "shap_value": 0.240039943168838
+        },
+        {
+          "feature": "open_ratio",
+          "value": 0.025269171610635025,
+          "shap_value": 0.2075258230868007
+        },
+        {
+          "feature": "write_bytes_requested",
+          "value": 33955921.0,
+          "shap_value": -0.1782044835527776
+        },
+        {
+          "feature": "rename_count",
+          "value": 0.0,
+          "shap_value": -0.1655660090995592
+        }
+      ]
+    },
+    "false_negative": null,
+    "true_negative": {
+      "window_id": "c6ef315c87f6c3e81a40",
+      "run_id": "browser__parsed__syscall_output__browser_syscall_download_3",
+      "probability": 0.2286599191576559,
+      "top_contributors": [
+        {
+          "feature": "open_ratio",
+          "value": 0.21702311048860637,
+          "shap_value": 9.507246091339237
+        },
+        {
+          "feature": "metadata_ratio",
+          "value": 0.21009535096697732,
+          "shap_value": 6.51165384114129
+        },
+        {
+          "feature": "process_count",
+          "value": 85.0,
+          "shap_value": -4.387236069724428
+        },
+        {
+          "feature": "open_to_read",
+          "value": 936.0,
+          "shap_value": -3.174309194855643
+        },
+        {
+          "feature": "open_count",
+          "value": 20143.0,
+          "shap_value": -1.8909458824239262
+        },
+        {
+          "feature": "write_ratio",
+          "value": 0.03428325162958574,
+          "shap_value": 1.5164381655151775
+        },
+        {
+          "feature": "unique_syscalls",
+          "value": 109.0,
+          "shap_value": -1.0422573841958764
+        },
+        {
+          "feature": "network_ratio",
+          "value": 0.016376663254861822,
+          "shap_value": 0.8433982080939723
+        },
+        {
+          "feature": "close_count",
+          "value": 9891.0,
+          "shap_value": -0.6214250823025605
+        },
+        {
+          "feature": "read_ratio",
+          "value": 0.1451381780962129,
+          "shap_value": 0.3068346246856697
+        }
+      ]
+    }
+  },
+  "adjacent_window_top5_jaccard": {
+    "pairs": 306,
+    "mean": 0.6678856727876336,
+    "median": 0.6666666666666666
+  }
+}

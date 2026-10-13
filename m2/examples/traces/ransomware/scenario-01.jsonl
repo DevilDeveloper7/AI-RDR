@@ -1,0 +1,4 @@
+{"timestamp":0.0,"syscall":"openat","pid":9001,"process_name":"sample","path":"/home/user/report.docx"}
+{"timestamp":0.2,"syscall":"read","pid":9001,"process_name":"sample","path":"/home/user/report.docx","bytes":8192}
+{"timestamp":0.4,"syscall":"write","pid":9001,"process_name":"sample","path":"/home/user/report.docx.locked","bytes":8192}
+{"timestamp":0.6,"syscall":"unlink","pid":9001,"process_name":"sample","path":"/home/user/report.docx"}
