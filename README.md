@@ -16,6 +16,11 @@ case management.
   detection host (ARM backend + IRDP + ML + Risk Fusion + AICM), the simulated
   protected endpoint (honey-files + auditd), and the credential-provisioning
   playbooks for each component's least-privilege identity.
+- **`m2/`** — Pavel's reproducible behavioural-ML package: Lifecycle dataset
+  normalization, leakage-safe windowing, parity-safe features, Logistic
+  Regression/Random Forest/XGBoost evaluation, TreeSHAP, an alert-only inference
+  API, tests, model documentation, and compact evaluation reports. Raw datasets,
+  virtual environments, and generated model binaries are intentionally excluded.
 
 ## Layered architecture
 

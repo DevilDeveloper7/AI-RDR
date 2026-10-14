@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-rdr-m2"
+version = "0.1.0"
+description = "AI-RDR M2 lifecycle preprocessing and leakage-safe sliding windows"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "httpx2>=2.13",
+  "pytest>=8.0",
+]
+api = [
+  "fastapi>=0.115",
+  "uvicorn>=0.34",
+]
+ml = [
+  "joblib>=1.4",
+  "numpy>=2.0",
+  "scikit-learn>=1.5",
+  "shap>=0.49",
+  "xgboost>=2.1",
+]
+
+[project.scripts]
+ai-rdr-m2 = "m2_pipeline.cli:main"
+ai-rdr-m2-api = "m2_pipeline.api:run"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

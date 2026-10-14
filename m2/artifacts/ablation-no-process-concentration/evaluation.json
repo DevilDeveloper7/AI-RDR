@@ -1,0 +1,600 @@
+{
+  "feature_file": "data/processed/lifecycle-features.jsonl",
+  "rows": 2253,
+  "features": [
+    "event_count",
+    "event_rate",
+    "unique_syscalls",
+    "syscall_entropy",
+    "read_count",
+    "write_count",
+    "open_count",
+    "close_count",
+    "rename_count",
+    "delete_count",
+    "sync_count",
+    "metadata_count",
+    "memory_count",
+    "network_count",
+    "process_count",
+    "read_ratio",
+    "write_ratio",
+    "open_ratio",
+    "rename_delete_ratio",
+    "sync_ratio",
+    "metadata_ratio",
+    "memory_ratio",
+    "network_ratio",
+    "read_bytes_requested",
+    "write_bytes_requested",
+    "open_to_read",
+    "read_to_write",
+    "write_to_sync"
+  ],
+  "excluded_features": [
+    "max_pid_share",
+    "unique_processes",
+    "unique_pids"
+  ],
+  "seed": 321,
+  "split_method": "deterministic class-stratified 70/15/15 assignment by run_id; no window from a run crosses splits",
+  "split_runs": {
+    "train": {
+      "total": 129,
+      "benign": 62,
+      "ransomware": 67
+    },
+    "validation": {
+      "total": 27,
+      "benign": 13,
+      "ransomware": 14
+    },
+    "test": {
+      "total": 29,
+      "benign": 14,
+      "ransomware": 15
+    }
+  },
+  "selection_policy": "Select on validation only: models meeting precision >= 0.90 and FPR < 0.02 rank first, then F1, PR-AUC and recall.",
+  "selected_model": "logistic_regression",
+  "explainability": "artifacts/ablation-no-process-concentration/explainability.json",
+  "dataset_shortcut_audit": {
+    "top_univariate_features": [
+      {
+        "feature": "metadata_ratio",
+        "direction_free_roc_auc": 0.9768442705806243
+      },
+      {
+        "feature": "open_ratio",
+        "direction_free_roc_auc": 0.9524654294032022
+      },
+      {
+        "feature": "metadata_count",
+        "direction_free_roc_auc": 0.8837917475335597
+      },
+      {
+        "feature": "open_count",
+        "direction_free_roc_auc": 0.8499552704997574
+      },
+      {
+        "feature": "close_count",
+        "direction_free_roc_auc": 0.8390167596635937
+      },
+      {
+        "feature": "network_ratio",
+        "direction_free_roc_auc": 0.8255536855086527
+      },
+      {
+        "feature": "read_to_write",
+        "direction_free_roc_auc": 0.821471170952612
+      },
+      {
+        "feature": "network_count",
+        "direction_free_roc_auc": 0.8090618934983018
+      },
+      {
+        "feature": "read_bytes_requested",
+        "direction_free_roc_auc": 0.7402782831958596
+      },
+      {
+        "feature": "write_bytes_requested",
+        "direction_free_roc_auc": 0.7111358765971212
+      }
+    ],
+    "warning": "Near-perfect held-out results and highly separating individual features may reflect collection/scenario artifacts. External IRDP hard-benign validation is required before deployment."
+  },
+  "models": {
+    "logistic_regression": {
+      "artifact": "artifacts/ablation-no-process-concentration/logistic_regression.joblib",
+      "threshold_selection": {
+        "threshold": 0.4,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "fpr": 0.0,
+        "constraints_met": true,
+        "criterion": "validation precision >= 0.90 and FPR < 0.02, then max F1"
+      },
+      "validation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "pr_auc": 1.0,
+        "roc_auc": 1.0,
+        "mcc": 1.0,
+        "brier_score": 0.0017922544126921214,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": {
+          "tn": 239,
+          "fp": 0,
+          "fn": 0,
+          "tp": 26
+        },
+        "threshold": 0.4
+      },
+      "test": {
+        "accuracy": 0.991044776119403,
+        "precision": 0.90625,
+        "recall": 1.0,
+        "f1": 0.9508196721311475,
+        "pr_auc": 0.9366587030417818,
+        "roc_auc": 0.995605138607167,
+        "mcc": 0.9472936166144219,
+        "brier_score": 0.009804096164293993,
+        "false_positive_rate": 0.00980392156862745,
+        "confusion_matrix": {
+          "tn": 303,
+          "fp": 3,
+          "fn": 0,
+          "tp": 29
+        },
+        "threshold": 0.4
+      },
+      "test_run_level": {
+        "accuracy": 0.896551724137931,
+        "precision": 0.8333333333333334,
+        "recall": 1.0,
+        "f1": 0.9090909090909091,
+        "pr_auc": 0.9440433096315448,
+        "roc_auc": 0.942857142857143,
+        "mcc": 0.809173593712687,
+        "brier_score": 0.10496379334728412,
+        "false_positive_rate": 0.21428571428571427,
+        "confusion_matrix": {
+          "tn": 11,
+          "fp": 3,
+          "fn": 0,
+          "tp": 15
+        },
+        "threshold": 0.4
+      },
+      "test_benign_workloads": {
+        "browser": {
+          "runs": 2,
+          "windows": 90,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "compression": {
+          "runs": 4,
+          "windows": 46,
+          "false_positives": 1,
+          "false_positive_rate": 0.021739130434782608
+        },
+        "filebench": {
+          "runs": 4,
+          "windows": 24,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "mediaserver": {
+          "runs": 2,
+          "windows": 8,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "spec": {
+          "runs": 2,
+          "windows": 138,
+          "false_positives": 2,
+          "false_positive_rate": 0.014492753623188406
+        }
+      },
+      "inference_latency_ms_per_window": {
+        "median": 0.00041909263914089595,
+        "p95": 0.0005222024107629907
+      },
+      "top_features": [
+        {
+          "feature": "read_ratio",
+          "importance": 3.2593543960922724
+        },
+        {
+          "feature": "metadata_ratio",
+          "importance": 2.8762291616198357
+        },
+        {
+          "feature": "write_ratio",
+          "importance": 2.1294054872172836
+        },
+        {
+          "feature": "network_ratio",
+          "importance": 2.011369842939606
+        },
+        {
+          "feature": "open_ratio",
+          "importance": 1.7647902943226517
+        },
+        {
+          "feature": "rename_delete_ratio",
+          "importance": 1.7092200738220404
+        },
+        {
+          "feature": "rename_count",
+          "importance": 1.605280307160694
+        },
+        {
+          "feature": "memory_ratio",
+          "importance": 1.5977249846801453
+        },
+        {
+          "feature": "open_to_read",
+          "importance": 1.5395464183607934
+        },
+        {
+          "feature": "process_count",
+          "importance": 1.3875224477208585
+        },
+        {
+          "feature": "write_bytes_requested",
+          "importance": 1.1457736437776507
+        },
+        {
+          "feature": "read_bytes_requested",
+          "importance": 1.0585974692114009
+        },
+        {
+          "feature": "open_count",
+          "importance": 0.9733529307511422
+        },
+        {
+          "feature": "delete_count",
+          "importance": 0.8415695150878867
+        },
+        {
+          "feature": "close_count",
+          "importance": 0.634708914269386
+        }
+      ]
+    },
+    "random_forest": {
+      "artifact": "artifacts/ablation-no-process-concentration/random_forest.joblib",
+      "threshold_selection": {
+        "threshold": 0.09,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "fpr": 0.0,
+        "constraints_met": true,
+        "criterion": "validation precision >= 0.90 and FPR < 0.02, then max F1"
+      },
+      "validation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "pr_auc": 1.0,
+        "roc_auc": 1.0,
+        "mcc": 1.0,
+        "brier_score": 0.0003247518177556025,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": {
+          "tn": 239,
+          "fp": 0,
+          "fn": 0,
+          "tp": 26
+        },
+        "threshold": 0.09
+      },
+      "test": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "pr_auc": 1.0,
+        "roc_auc": 1.0,
+        "mcc": 1.0,
+        "brier_score": 0.0007932255863570343,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": {
+          "tn": 306,
+          "fp": 0,
+          "fn": 0,
+          "tp": 29
+        },
+        "threshold": 0.09
+      },
+      "test_run_level": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "pr_auc": 1.0,
+        "roc_auc": 1.0,
+        "mcc": 1.0,
+        "brier_score": 0.0003921543706588949,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": {
+          "tn": 14,
+          "fp": 0,
+          "fn": 0,
+          "tp": 15
+        },
+        "threshold": 0.09
+      },
+      "test_benign_workloads": {
+        "browser": {
+          "runs": 2,
+          "windows": 90,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "compression": {
+          "runs": 4,
+          "windows": 46,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "filebench": {
+          "runs": 4,
+          "windows": 24,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "mediaserver": {
+          "runs": 2,
+          "windows": 8,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "spec": {
+          "runs": 2,
+          "windows": 138,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        }
+      },
+      "inference_latency_ms_per_window": {
+        "median": 0.07965534772557109,
+        "p95": 0.11164534109846147
+      },
+      "top_features": [
+        {
+          "feature": "metadata_ratio",
+          "importance": 0.25280678175905635
+        },
+        {
+          "feature": "open_ratio",
+          "importance": 0.17187693137588805
+        },
+        {
+          "feature": "metadata_count",
+          "importance": 0.11033675697748149
+        },
+        {
+          "feature": "open_count",
+          "importance": 0.07222121991586782
+        },
+        {
+          "feature": "read_to_write",
+          "importance": 0.06943805436824588
+        },
+        {
+          "feature": "close_count",
+          "importance": 0.03919919954624166
+        },
+        {
+          "feature": "write_ratio",
+          "importance": 0.03628007800530304
+        },
+        {
+          "feature": "write_bytes_requested",
+          "importance": 0.03103122199469375
+        },
+        {
+          "feature": "write_count",
+          "importance": 0.027763077151565268
+        },
+        {
+          "feature": "read_count",
+          "importance": 0.024065219084186153
+        },
+        {
+          "feature": "network_ratio",
+          "importance": 0.02284671258325729
+        },
+        {
+          "feature": "read_bytes_requested",
+          "importance": 0.021039679146368586
+        },
+        {
+          "feature": "rename_delete_ratio",
+          "importance": 0.01692190969421619
+        },
+        {
+          "feature": "syscall_entropy",
+          "importance": 0.014479198009391517
+        },
+        {
+          "feature": "read_ratio",
+          "importance": 0.014234064159332097
+        }
+      ]
+    },
+    "xgboost": {
+      "artifact": "artifacts/ablation-no-process-concentration/xgboost.joblib",
+      "threshold_selection": {
+        "threshold": 0.02,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "fpr": 0.0,
+        "constraints_met": true,
+        "criterion": "validation precision >= 0.90 and FPR < 0.02, then max F1"
+      },
+      "validation": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "pr_auc": 0.9999999999999999,
+        "roc_auc": 1.0,
+        "mcc": 1.0,
+        "brier_score": 2.246020130769466e-06,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": {
+          "tn": 239,
+          "fp": 0,
+          "fn": 0,
+          "tp": 26
+        },
+        "threshold": 0.02
+      },
+      "test": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "pr_auc": 0.9999999999999998,
+        "roc_auc": 1.0,
+        "mcc": 1.0,
+        "brier_score": 2.2879758034832776e-05,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": {
+          "tn": 306,
+          "fp": 0,
+          "fn": 0,
+          "tp": 29
+        },
+        "threshold": 0.02
+      },
+      "test_run_level": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "pr_auc": 1.0,
+        "roc_auc": 1.0,
+        "mcc": 1.0,
+        "brier_score": 1.5718525429097987e-05,
+        "false_positive_rate": 0.0,
+        "confusion_matrix": {
+          "tn": 14,
+          "fp": 0,
+          "fn": 0,
+          "tp": 15
+        },
+        "threshold": 0.02
+      },
+      "test_benign_workloads": {
+        "browser": {
+          "runs": 2,
+          "windows": 90,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "compression": {
+          "runs": 4,
+          "windows": 46,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "filebench": {
+          "runs": 4,
+          "windows": 24,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "mediaserver": {
+          "runs": 2,
+          "windows": 8,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        },
+        "spec": {
+          "runs": 2,
+          "windows": 138,
+          "false_positives": 0,
+          "false_positive_rate": 0.0
+        }
+      },
+      "inference_latency_ms_per_window": {
+        "median": 0.0010473880423371917,
+        "p95": 0.0013207328339010032
+      },
+      "top_features": [
+        {
+          "feature": "metadata_ratio",
+          "importance": 0.5461190342903137
+        },
+        {
+          "feature": "open_ratio",
+          "importance": 0.085273876786232
+        },
+        {
+          "feature": "write_count",
+          "importance": 0.07903208583593369
+        },
+        {
+          "feature": "read_to_write",
+          "importance": 0.04766193404793739
+        },
+        {
+          "feature": "close_count",
+          "importance": 0.039270274341106415
+        },
+        {
+          "feature": "metadata_count",
+          "importance": 0.03449423983693123
+        },
+        {
+          "feature": "syscall_entropy",
+          "importance": 0.03390085697174072
+        },
+        {
+          "feature": "read_bytes_requested",
+          "importance": 0.03154736012220383
+        },
+        {
+          "feature": "write_ratio",
+          "importance": 0.02689274773001671
+        },
+        {
+          "feature": "read_count",
+          "importance": 0.01405597385019064
+        },
+        {
+          "feature": "network_ratio",
+          "importance": 0.01232147216796875
+        },
+        {
+          "feature": "unique_syscalls",
+          "importance": 0.010540916584432125
+        },
+        {
+          "feature": "open_count",
+          "importance": 0.009477423503994942
+        },
+        {
+          "feature": "sync_count",
+          "importance": 0.00834176316857338
+        },
+        {
+          "feature": "event_count",
+          "importance": 0.006734868045896292
+        }
+      ]
+    }
+  }
+}

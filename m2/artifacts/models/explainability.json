@@ -1,0 +1,189 @@
+{
+  "method": "TreeSHAP on held-out test windows",
+  "sample_windows": 335,
+  "global_mean_absolute_shap": [
+    {
+      "feature": "max_pid_share",
+      "mean_abs_shap": 0.1056970219159233
+    },
+    {
+      "feature": "metadata_ratio",
+      "mean_abs_shap": 0.07985110461819633
+    },
+    {
+      "feature": "open_ratio",
+      "mean_abs_shap": 0.05765138483450971
+    },
+    {
+      "feature": "metadata_count",
+      "mean_abs_shap": 0.05178139443477244
+    },
+    {
+      "feature": "unique_processes",
+      "mean_abs_shap": 0.025856601975942323
+    },
+    {
+      "feature": "read_to_write",
+      "mean_abs_shap": 0.024953498238257876
+    },
+    {
+      "feature": "close_count",
+      "mean_abs_shap": 0.022696362592963832
+    },
+    {
+      "feature": "open_count",
+      "mean_abs_shap": 0.02249753343352025
+    },
+    {
+      "feature": "read_bytes_requested",
+      "mean_abs_shap": 0.017875360094842474
+    },
+    {
+      "feature": "read_count",
+      "mean_abs_shap": 0.01535249047084822
+    },
+    {
+      "feature": "write_ratio",
+      "mean_abs_shap": 0.015279756181710267
+    },
+    {
+      "feature": "write_count",
+      "mean_abs_shap": 0.01454262479863264
+    },
+    {
+      "feature": "unique_pids",
+      "mean_abs_shap": 0.011789677185859628
+    },
+    {
+      "feature": "write_bytes_requested",
+      "mean_abs_shap": 0.011780606297719922
+    },
+    {
+      "feature": "syscall_entropy",
+      "mean_abs_shap": 0.011097713084561507
+    }
+  ],
+  "local_examples": {
+    "true_positive": {
+      "window_id": "b64681bcb669f1425acf",
+      "run_id": "ftrace_results__parsed__out_exec_parsed__asymm_35",
+      "probability": 0.9997660181388273,
+      "top_contributors": [
+        {
+          "feature": "max_pid_share",
+          "value": 0.9878787878787879,
+          "shap_value": 0.1130938886437117
+        },
+        {
+          "feature": "metadata_ratio",
+          "value": 0.4303030303030303,
+          "shap_value": 0.09740471322193572
+        },
+        {
+          "feature": "open_ratio",
+          "value": 0.08242424242424243,
+          "shap_value": 0.05857624698867571
+        },
+        {
+          "feature": "unique_processes",
+          "value": 3.0,
+          "shap_value": 0.04294777271541863
+        },
+        {
+          "feature": "metadata_count",
+          "value": 355.0,
+          "shap_value": 0.03779390302272487
+        },
+        {
+          "feature": "unique_pids",
+          "value": 3.0,
+          "shap_value": 0.02260343618878943
+        },
+        {
+          "feature": "close_count",
+          "value": 70.0,
+          "shap_value": 0.021901821177519414
+        },
+        {
+          "feature": "read_to_write",
+          "value": 0.0,
+          "shap_value": 0.018722047907674497
+        },
+        {
+          "feature": "open_count",
+          "value": 68.0,
+          "shap_value": 0.018477568776978856
+        },
+        {
+          "feature": "write_ratio",
+          "value": 0.0036363636363636364,
+          "shap_value": 0.01246806705146651
+        }
+      ]
+    },
+    "false_positive": null,
+    "false_negative": null,
+    "true_negative": {
+      "window_id": "c6ef315c87f6c3e81a40",
+      "run_id": "browser__parsed__syscall_output__browser_syscall_download_3",
+      "probability": 0.004089930733316705,
+      "top_contributors": [
+        {
+          "feature": "max_pid_share",
+          "value": 0.17573668049345473,
+          "shap_value": -0.16775613292649955
+        },
+        {
+          "feature": "read_to_write",
+          "value": 1618.0,
+          "shap_value": -0.07156704077770876
+        },
+        {
+          "feature": "unique_processes",
+          "value": 51.0,
+          "shap_value": -0.06830780729310869
+        },
+        {
+          "feature": "write_count",
+          "value": 3182.0,
+          "shap_value": -0.04443435112980646
+        },
+        {
+          "feature": "unique_pids",
+          "value": 135.0,
+          "shap_value": -0.04374038546177009
+        },
+        {
+          "feature": "metadata_ratio",
+          "value": 0.21009535096697732,
+          "shap_value": 0.04351069519485262
+        },
+        {
+          "feature": "read_count",
+          "value": 13471.0,
+          "shap_value": -0.03639200989740405
+        },
+        {
+          "feature": "open_ratio",
+          "value": 0.21702311048860637,
+          "shap_value": 0.023065884277172013
+        },
+        {
+          "feature": "unique_syscalls",
+          "value": 109.0,
+          "shap_value": -0.021980397394843126
+        },
+        {
+          "feature": "memory_count",
+          "value": 4083.0,
+          "shap_value": -0.014986518377667157
+        }
+      ]
+    }
+  },
+  "adjacent_window_top5_jaccard": {
+    "pairs": 306,
+    "mean": 0.7684407096171801,
+    "median": 0.6666666666666666
+  }
+}

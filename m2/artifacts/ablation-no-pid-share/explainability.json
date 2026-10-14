@@ -1,0 +1,189 @@
+{
+  "method": "TreeSHAP on held-out test windows",
+  "sample_windows": 335,
+  "global_mean_absolute_shap": [
+    {
+      "feature": "metadata_ratio",
+      "mean_abs_shap": 0.11331256006044477
+    },
+    {
+      "feature": "open_ratio",
+      "mean_abs_shap": 0.07874196681218468
+    },
+    {
+      "feature": "metadata_count",
+      "mean_abs_shap": 0.0608615209834452
+    },
+    {
+      "feature": "read_to_write",
+      "mean_abs_shap": 0.04211588025622556
+    },
+    {
+      "feature": "unique_processes",
+      "mean_abs_shap": 0.036319396991353226
+    },
+    {
+      "feature": "open_count",
+      "mean_abs_shap": 0.031005765739748763
+    },
+    {
+      "feature": "close_count",
+      "mean_abs_shap": 0.023201595396229777
+    },
+    {
+      "feature": "read_bytes_requested",
+      "mean_abs_shap": 0.02250700351358934
+    },
+    {
+      "feature": "write_ratio",
+      "mean_abs_shap": 0.018597238013420385
+    },
+    {
+      "feature": "network_ratio",
+      "mean_abs_shap": 0.016536911713161635
+    },
+    {
+      "feature": "read_count",
+      "mean_abs_shap": 0.014992380913770358
+    },
+    {
+      "feature": "unique_pids",
+      "mean_abs_shap": 0.014884029377300928
+    },
+    {
+      "feature": "write_count",
+      "mean_abs_shap": 0.012455597542939968
+    },
+    {
+      "feature": "write_bytes_requested",
+      "mean_abs_shap": 0.011225445533462775
+    },
+    {
+      "feature": "syscall_entropy",
+      "mean_abs_shap": 0.009682690995321309
+    }
+  ],
+  "local_examples": {
+    "true_positive": {
+      "window_id": "b64681bcb669f1425acf",
+      "run_id": "ftrace_results__parsed__out_exec_parsed__asymm_35",
+      "probability": 0.9999027290073186,
+      "top_contributors": [
+        {
+          "feature": "metadata_ratio",
+          "value": 0.4303030303030303,
+          "shap_value": 0.11793999059917304
+        },
+        {
+          "feature": "open_ratio",
+          "value": 0.08242424242424243,
+          "shap_value": 0.08088523732887688
+        },
+        {
+          "feature": "unique_processes",
+          "value": 3.0,
+          "shap_value": 0.06667884264728388
+        },
+        {
+          "feature": "metadata_count",
+          "value": 355.0,
+          "shap_value": 0.0459551405880407
+        },
+        {
+          "feature": "read_to_write",
+          "value": 0.0,
+          "shap_value": 0.03751356925858079
+        },
+        {
+          "feature": "open_count",
+          "value": 68.0,
+          "shap_value": 0.033542954519394194
+        },
+        {
+          "feature": "close_count",
+          "value": 70.0,
+          "shap_value": 0.02380293767240764
+        },
+        {
+          "feature": "unique_pids",
+          "value": 3.0,
+          "shap_value": 0.022372894344752176
+        },
+        {
+          "feature": "network_ratio",
+          "value": 0.0,
+          "shap_value": 0.01363474422455732
+        },
+        {
+          "feature": "write_ratio",
+          "value": 0.0036363636363636364,
+          "shap_value": 0.012783378329717557
+        }
+      ]
+    },
+    "false_positive": null,
+    "false_negative": null,
+    "true_negative": {
+      "window_id": "c6ef315c87f6c3e81a40",
+      "run_id": "browser__parsed__syscall_output__browser_syscall_download_3",
+      "probability": 0.014233265188779248,
+      "top_contributors": [
+        {
+          "feature": "read_to_write",
+          "value": 1618.0,
+          "shap_value": -0.1385695724293132
+        },
+        {
+          "feature": "unique_processes",
+          "value": 51.0,
+          "shap_value": -0.081648166960471
+        },
+        {
+          "feature": "unique_pids",
+          "value": 135.0,
+          "shap_value": -0.05886947190821763
+        },
+        {
+          "feature": "metadata_ratio",
+          "value": 0.21009535096697732,
+          "shap_value": 0.056505213412889846
+        },
+        {
+          "feature": "write_count",
+          "value": 3182.0,
+          "shap_value": -0.048642893661500736
+        },
+        {
+          "feature": "read_count",
+          "value": 13471.0,
+          "shap_value": -0.041176650243666506
+        },
+        {
+          "feature": "unique_syscalls",
+          "value": 109.0,
+          "shap_value": -0.040001342519040084
+        },
+        {
+          "feature": "open_ratio",
+          "value": 0.21702311048860637,
+          "shap_value": 0.025223353803363067
+        },
+        {
+          "feature": "network_ratio",
+          "value": 0.016376663254861822,
+          "shap_value": -0.020078827603013993
+        },
+        {
+          "feature": "write_bytes_requested",
+          "value": 808897.0,
+          "shap_value": -0.01681139991445923
+        }
+      ]
+    }
+  },
+  "adjacent_window_top5_jaccard": {
+    "pairs": 306,
+    "mean": 0.7581310301898537,
+    "median": 1.0
+  }
+}

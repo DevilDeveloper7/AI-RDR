@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Datasets and generated preprocessing artifacts are large and reproducible.
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+artifacts/models/*.joblib
+vendor/*
+!vendor/.gitkeep
