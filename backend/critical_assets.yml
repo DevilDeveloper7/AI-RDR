@@ -1,0 +1,28 @@
+# Static allow-list of hosts/path patterns that must NEVER be auto-executed
+# against, regardless of risk tier or a playbook's default execution mode
+# (SDD S6.4.1's allow-list mechanism; planning/arm-playbooks-spec.md).
+#
+# Checked by arm.py's ARM.handle_trigger() BEFORE the approval-gate decision,
+# not instead of it: a match here forces pending_approval even for PB-02
+# (which would otherwise auto-execute), on top of PB-01/03/04 already always
+# requiring approval regardless of this list.
+#
+# fnmatch-style globs, matched against the trigger's `host` field.
+#
+# This is an EXAMPLE file for this demo/testing phase - the real homelab
+# hostnames below (airdr-siem, airdr-detect) are listed defensively so a
+# synthetic test trigger can never accidentally auto-act against the
+# detection/SIEM infrastructure itself, not because either is expected to
+# ever legitimately receive an ARM trigger.
+hosts:
+  - "airdr-siem"
+  - "airdr-detect"
+  - "*-prod"
+  - "*.prod.internal"
+
+# Reserved for a future PathPredict-aware allow-list check (not yet wired into
+# arm.py - see planning/arm-playbooks-spec.md's scope-downs). Listed here so
+# the config shape is stable when that check is added.
+paths:
+  - "/srv/finance/*"
+  - "/etc/*"

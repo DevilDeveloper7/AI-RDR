@@ -1,0 +1,387 @@
+{
+  "version": "v3",
+  "trained_at_utc": "2026-09-25T21:06:31.552540+00:00",
+  "window_params": {
+    "window_sec": 30,
+    "window_group_cols": [
+      "sample_id",
+      "process_id"
+    ]
+  },
+  "dataset_metadata": {
+    "sources": {
+      "elfen": {
+        "path": "data/features/elfen_features.parquet",
+        "rows": 183,
+        "sha256_16": "681a120b496fbd55"
+      },
+      "lifecycle": {
+        "path": "data/features/lifecycle_features.parquet",
+        "rows": 6907,
+        "sha256_16": "0c6297592a4562af"
+      },
+      "en2025": {
+        "path": "data/features/en2025_features.parquet",
+        "rows": 16454,
+        "sha256_16": "f7f1eafe3a457f63"
+      },
+      "lidds2019": {
+        "path": "data/features/lidds2019_features.parquet",
+        "rows_total": 139109,
+        "rows_training_eligible_benign": 84576,
+        "rows_validation_exploit": 54533,
+        "sha256_16": "78da16aaac8515b7"
+      },
+      "lidds2021": {
+        "path": "data/features/lidds2021_features.parquet",
+        "rows_total": 19940,
+        "rows_training_eligible_benign": 14423,
+        "rows_validation_exploit": 5517,
+        "sha256_16": "68d4b4744afe9bca"
+      },
+      "lidds_exploit": {
+        "rows": 60050,
+        "role": "validation_only",
+        "note": "concatenation of lidds2019+lidds2021 training_eligible=false rows"
+      },
+      "linux_apt_2024": {
+        "path": "data/features/linux_apt_2024_features.parquet",
+        "rows": 2040,
+        "sha256_16": "2b717509f818cb06",
+        "role": "validation_only"
+      }
+    },
+    "split": {
+      "test_size": 0.2,
+      "random_state": 42,
+      "per_source_train_test_counts": {
+        "elfen": {
+          "train": 146,
+          "test": 37
+        },
+        "lifecycle": {
+          "train": 5525,
+          "test": 1382
+        },
+        "en2025": {
+          "train": 13163,
+          "test": 3291
+        },
+        "lidds2019": {
+          "train": 162,
+          "test": 41
+        },
+        "lidds2021": {
+          "train": 28,
+          "test": 7
+        }
+      }
+    },
+    "class_imbalance_fix": {
+      "tracker": "planning/class-imbalance-fix-progress.md",
+      "method": "subsample_lidds_benign: bound LID-DS-2019/2021 benign rows' share of the pooled training pool via random (fixed random_state), proportional-across-sources subsampling, upstream of both compute_scale_pos_weight and RF's class_weight=balanced; excluded rows kept as a reported evaluation slice, not discarded",
+      "candidate_shares_swept": [
+        0.01,
+        0.02,
+        0.05,
+        0.1,
+        0.15,
+        0.2,
+        0.25,
+        0.4,
+        0.5
+      ],
+      "chosen_share": 0.01,
+      "achieved_share": 0.010007568749474392,
+      "lidds_kept_counts": {
+        "lidds2019": 203,
+        "lidds2021": 35
+      },
+      "lidds_excess_counts": {
+        "lidds2019": 84373,
+        "lidds2021": 14388
+      },
+      "sweep_summary": [
+        {
+          "target_benign_share": 0.01,
+          "achieved_benign_share": 0.010007568749474392,
+          "apt_fpr": 0.9122549019607843,
+          "en2025_benign_fpr": 0.055891238670694864,
+          "lifecycle_recall": 0.894356005788712,
+          "lidds_exploit_fpr": 0.08766028309741881,
+          "lidds_excess_benign_fpr": 0.1905914277903221
+        },
+        {
+          "target_benign_share": 0.02,
+          "achieved_benign_share": 0.01998001998001998,
+          "apt_fpr": 0.9921568627450981,
+          "en2025_benign_fpr": 0.05740181268882175,
+          "lifecycle_recall": 0.8661360347322721,
+          "lidds_exploit_fpr": 0.06151540383014155,
+          "lidds_excess_benign_fpr": 0.12185466762756422
+        },
+        {
+          "target_benign_share": 0.05,
+          "achieved_benign_share": 0.04999394746398741,
+          "apt_fpr": 0.9955882352941177,
+          "en2025_benign_fpr": 0.0634441087613293,
+          "lifecycle_recall": 0.8118668596237337,
+          "lidds_exploit_fpr": 0.03298917568692756,
+          "lidds_excess_benign_fpr": 0.051626432078559735
+        },
+        {
+          "target_benign_share": 0.1,
+          "achieved_benign_share": 0.1,
+          "apt_fpr": 0.990686274509804,
+          "en2025_benign_fpr": 0.08761329305135952,
+          "lifecycle_recall": 0.7583212735166426,
+          "lidds_exploit_fpr": 0.018567860116569527,
+          "lidds_excess_benign_fpr": 0.024101760683938038
+        },
+        {
+          "target_benign_share": 0.15,
+          "achieved_benign_share": 0.15000541535795517,
+          "apt_fpr": 0.9931372549019608,
+          "en2025_benign_fpr": 0.11329305135951662,
+          "lifecycle_recall": 0.731548480463097,
+          "lidds_exploit_fpr": 0.014687760199833472,
+          "lidds_excess_benign_fpr": 0.017165028889544937
+        },
+        {
+          "target_benign_share": 0.2,
+          "achieved_benign_share": 0.2,
+          "apt_fpr": 0.9941176470588236,
+          "en2025_benign_fpr": 0.15256797583081572,
+          "lifecycle_recall": 0.7952243125904487,
+          "lidds_exploit_fpr": 0.017085761865112407,
+          "lidds_excess_benign_fpr": 0.022220312953078518
+        },
+        {
+          "target_benign_share": 0.25,
+          "achieved_benign_share": 0.25,
+          "apt_fpr": 0.9995098039215686,
+          "en2025_benign_fpr": 0.18277945619335348,
+          "lifecycle_recall": 0.7850940665701881,
+          "lidds_exploit_fpr": 0.01440466278101582,
+          "lidds_excess_benign_fpr": 0.020394729624469286
+        },
+        {
+          "target_benign_share": 0.4,
+          "achieved_benign_share": 0.4,
+          "apt_fpr": 0.9990196078431373,
+          "en2025_benign_fpr": 0.3610271903323263,
+          "lifecycle_recall": 0.7829232995658466,
+          "lidds_exploit_fpr": 0.014171523730224813,
+          "lidds_excess_benign_fpr": 0.018954899583448374
+        },
+        {
+          "target_benign_share": 0.5,
+          "achieved_benign_share": 0.5,
+          "apt_fpr": 1.0,
+          "en2025_benign_fpr": 0.4033232628398791,
+          "lifecycle_recall": 0.7821997105643994,
+          "lidds_exploit_fpr": 0.013755203996669442,
+          "lidds_excess_benign_fpr": 0.01798422901066861
+        }
+      ]
+    },
+    "evaluation": {
+      "overall_pooled_test": {
+        "n": 4758,
+        "n_positive": 4048,
+        "n_negative": 710,
+        "confusion_matrix": {
+          "tn": 664,
+          "fp": 46,
+          "fn": 915,
+          "tp": 3133
+        },
+        "precision": 0.9855300408933627,
+        "recall": 0.7739624505928854,
+        "f1": 0.8670264286702642,
+        "false_positive_rate": 0.0647887323943662,
+        "threshold": 0.65
+      },
+      "per_source_test": {
+        "elfen": {
+          "n": 37,
+          "n_positive": 37,
+          "n_negative": 0,
+          "confusion_matrix": {
+            "tn": 0,
+            "fp": 0,
+            "fn": 0,
+            "tp": 37
+          },
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "false_positive_rate": null,
+          "threshold": 0.65
+        },
+        "lifecycle": {
+          "n": 1382,
+          "n_positive": 1382,
+          "n_negative": 0,
+          "confusion_matrix": {
+            "tn": 0,
+            "fp": 0,
+            "fn": 146,
+            "tp": 1236
+          },
+          "precision": 1.0,
+          "recall": 0.894356005788712,
+          "f1": 0.9442322383498855,
+          "false_positive_rate": null,
+          "threshold": 0.65
+        },
+        "en2025": {
+          "n": 3291,
+          "n_positive": 2629,
+          "n_negative": 662,
+          "confusion_matrix": {
+            "tn": 625,
+            "fp": 37,
+            "fn": 769,
+            "tp": 1860
+          },
+          "precision": 0.9804955192409067,
+          "recall": 0.7074933434766071,
+          "f1": 0.821917808219178,
+          "false_positive_rate": 0.055891238670694864,
+          "threshold": 0.65
+        },
+        "lidds2019": {
+          "n": 41,
+          "n_positive": 0,
+          "n_negative": 41,
+          "confusion_matrix": {
+            "tn": 36,
+            "fp": 5,
+            "fn": 0,
+            "tp": 0
+          },
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "false_positive_rate": 0.12195121951219512,
+          "threshold": 0.65
+        },
+        "lidds2021": {
+          "n": 7,
+          "n_positive": 0,
+          "n_negative": 7,
+          "confusion_matrix": {
+            "tn": 3,
+            "fp": 4,
+            "fn": 0,
+            "tp": 0
+          },
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "false_positive_rate": 0.5714285714285714,
+          "threshold": 0.65
+        }
+      },
+      "linux_apt_2024_validation_fpr": 0.9122549019607843,
+      "linux_apt_2024_validation_n": 2040,
+      "lidds_exploit_validation_fpr": 0.08766028309741881,
+      "lidds_exploit_validation_n": 60050,
+      "lidds_excess_benign_validation_fpr": 0.1905914277903221,
+      "lidds_excess_benign_validation_n": 98761,
+      "rf_feature_importance": [
+        [
+          "n_events",
+          0.3449573215663976
+        ],
+        [
+          "event_mask",
+          0.2506913126363507
+        ],
+        [
+          "unique_extensions_touched",
+          0.2023269231303579
+        ],
+        [
+          "file_mod_rate",
+          0.06146667926339999
+        ],
+        [
+          "entropy_score",
+          0.05950379669451705
+        ],
+        [
+          "write_read_ratio",
+          0.04132314987136252
+        ],
+        [
+          "encryption_rate",
+          0.027331982005782202
+        ],
+        [
+          "rename_rate",
+          0.01239883483183212
+        ]
+      ],
+      "xgb_feature_importance": [
+        [
+          "unique_extensions_touched",
+          0.25903642177581787
+        ],
+        [
+          "n_events",
+          0.16182199120521545
+        ],
+        [
+          "file_mod_rate",
+          0.14470639824867249
+        ],
+        [
+          "event_mask",
+          0.12927567958831787
+        ],
+        [
+          "write_read_ratio",
+          0.08905936777591705
+        ],
+        [
+          "entropy_score",
+          0.08868420869112015
+        ],
+        [
+          "encryption_rate",
+          0.0637444406747818
+        ],
+        [
+          "rename_rate",
+          0.06367145478725433
+        ]
+      ]
+    }
+  },
+  "hyperparameters": {
+    "rf_params": {
+      "n_estimators": 100,
+      "class_weight": "balanced",
+      "random_state": 42,
+      "n_jobs": -1
+    },
+    "xgb_params": {
+      "n_estimators": 200,
+      "learning_rate": 0.05,
+      "max_depth": 6,
+      "random_state": 42,
+      "n_jobs": -1,
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "scale_pos_weight": 0.1754819574888779
+    }
+  },
+  "library_versions": {
+    "scikit_learn": "1.9.1",
+    "xgboost": "3.4.1",
+    "joblib": "1.6.0",
+    "python": "3.14.7"
+  }
+}

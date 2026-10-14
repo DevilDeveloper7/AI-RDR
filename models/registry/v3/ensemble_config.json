@@ -1,0 +1,15 @@
+{
+  "rf_weight": 0.45,
+  "xgb_weight": 0.55,
+  "default_threshold": 0.65,
+  "feature_columns": [
+    "n_events",
+    "file_mod_rate",
+    "write_read_ratio",
+    "rename_rate",
+    "unique_extensions_touched",
+    "event_mask",
+    "entropy_score",
+    "encryption_rate"
+  ]
+}

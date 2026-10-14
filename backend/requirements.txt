@@ -1,0 +1,66 @@
+# Runtime dependencies (everything backend/*.py actually imports)
+Flask>=3.0,<4.0
+paramiko>=3.4,<6.0
+proxmoxer>=2.0,<3.0
+PyYAML>=6.0,<7.0
+requests>=2.31
+
+# backend/irdp/normalize.py imports pipeline/features/event_categories.py
+# directly (task 4.1's Correction 2 - reuse the ML engine's real bitmask
+# mapping instead of reimplementing it), which itself imports polars.
+#
+# KNOWN HARDWARE ISSUE, hit twice now on airdr-detect (2026-09-29 and again
+# 2026-09-30 - the second time was this exact line silently clobbering the
+# already-working fix): airdr-detect's VM CPU (QEMU pc-i440fx/kvm64-class)
+# has no AVX/AVX2 flags. Plain `polars` requires AVX2 and crashes on import
+# with SIGILL (Illegal instruction), not a catchable Python exception -
+# `pip install` reports success anyway. `polars-lts-cpu` ships the same
+# importable `polars` module built against SSE4.2 only - pin THIS name, not
+# `polars`, or a future `pip install -r requirements.txt` will overwrite a
+# working install with the AVX2 build again.
+polars-lts-cpu>=1.0,<2.0
+
+# pyarrow: polars' own `.to_pandas()` (used by backend/ml_scoring.py to hand
+# windowed features to pipeline/training/dataset.to_feature_matrix) needs it
+# transitively. Missing entirely until found live on 2026-09-30 - caused
+# 10/80 tests to fail with ModuleNotFoundError on the one host that doesn't
+# happen to have it already installed for an unrelated reason. Verified
+# clean on airdr-detect's no-AVX2 CPU (no equivalent -lts-cpu variant
+# needed for this package).
+pyarrow>=14.0
+
+# backend/ml_scoring.py (task 4.2, live ML inference) - loads the real
+# trained v3 model (models/registry/v3/*.joblib) and scores it via the same
+# pipeline/training/model.py + pipeline/training/dataset.py code the
+# offline training pipeline uses (imported, never reimplemented).
+#
+# Version ranges widened 2026-09-30 after a real deployment failure: this
+# repo's own dev environment runs Python 3.14 and had pandas 3.0.6/
+# scikit-learn 1.9.1 already installed, so an earlier version of this file
+# pinned >=3.0/>=1.9 - but airdr-detect runs Python 3.10.12, and pandas 3.0/
+# scikit-learn 1.9 both correctly declare a higher Python-version floor than
+# that, so pip there can only ever see up to pandas 2.3.3/scikit-learn
+# 1.7.2 - not a broken index, a genuine Python-version gap between this
+# project's dev and production environments. The ranges below are widened
+# to cover both; empirically confirmed the v3 model (trained against
+# scikit-learn 1.9.1/xgboost 3.4.1, per models/registry/v3/metadata.json)
+# still scores correctly against scikit-learn 1.7.2/xgboost 3.2.0
+# (InconsistentVersionWarning appears, nothing breaks) - full test suite
+# 80/80 on that combination.
+numpy>=1.26,<3.0
+pandas>=2.0,<4.0
+scikit-learn>=1.5,<2.0
+xgboost>=2.0,<4.0
+joblib>=1.3,<2.0
+
+# pipeline/features/schema.py (imported transitively via
+# pipeline/training/dataset.py) uses pandera for offline feature-quality
+# validation - pulled in even though ml_scoring.py never calls
+# validate_features itself, since the import happens at module load time
+# regardless of whether the function is called.
+pandera>=0.20,<1.0
+
+# Test dependency (backend/tests/*.py) - not needed to run the app itself,
+# kept in this one requirements.txt per the spec's file layout rather than
+# splitting into a separate requirements-dev.txt.
+pytest>=8.0

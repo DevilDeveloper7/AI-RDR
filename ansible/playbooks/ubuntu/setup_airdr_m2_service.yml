@@ -1,0 +1,230 @@
+# AI-RDR capstone project — deploys Pavel's separate `m2_pipeline` behavioral
+# ransomware classifier ("M2") as its own systemd-managed FastAPI inference
+# service on airdr-detect, alongside airdr-flask.service (port 5000) and
+# irdp-poll.service/.timer (m2-integration-spec.md Part 2 / task
+# m2-deployment).
+#
+# Deliberately kept in a SEPARATE clone (/opt/airdr-m2), not folded into
+# /opt/airdr-detect: M2's source (https://github.com/DevilDeveloper7/AI-RDR.git,
+# branch m2/pavel-weeks-1-4, package under its own m2/ subdir with its own
+# pyproject.toml) is a genuinely separate codebase/repo from ai-rdr-backend,
+# developed and tested independently by a different teammate — matching the
+# same "pull from its own source of truth" principle this project already
+# applies to ai-rdr-backend itself, and keeping this playbook from ever
+# needing to touch anything under /opt/airdr-detect/backend/ (out of scope —
+# that's already-merged, already-tested application code owned by a
+# different task).
+#
+# Scope boundary (read M2_API_CONTRACT.md / m2-integration-spec.md for the
+# full reasoning, not re-derived here): M2's own docs disclose a real
+# dataset-shortcut risk (max_pid_share alone gets ROC-AUC ~0.99 on training
+# data) and state its alerts must never be treated as containment
+# authorization until external hard-benign validation completes. This
+# service is therefore display-only / alert-only by construction — it is
+# deployed bound to 127.0.0.1 only (M2's own api.py hardcodes host/port, see
+# below) and nothing in this playbook opens port 8000 past localhost. The
+# actual "never influences risk_tier" guarantee lives entirely in
+# already-merged application code (backend/irdp/pipeline.py's run_once(),
+# backend/risk_fusion.py's fuse()) — wiring this service's URL into that
+# code is a SEPARATE playbook (setup_airdr_m2_wiring.yml), run only after
+# this service is confirmed healthy.
+#
+# M2's FastAPI app (src/m2_pipeline/api.py) has a console-script entrypoint
+# (`ai-rdr-m2-api`) that calls uvicorn.run(..., host="127.0.0.1", port=8000)
+# — hardcoded, not configurable via env/CLI — so this unit runs that console
+# script directly rather than trying to override host/port.
+#
+# The trained model artifact (random_forest.joblib) is a build artifact, not
+# IaC source — never committed to this repo (same reasoning M2's own
+# .gitignore already applies to *.joblib).
+#
+# Transport note (discovered while deploying this, not assumed up front):
+# the artifact was originally staged on the devops control host on the
+# assumption that host IS the Ansible control node SemaphoreUI executes
+# playbooks from. It isn't — SemaphoreUI's own task runner clones this repo
+# and runs ansible-playbook from its own separate workspace host, which has
+# no access to the staging host's filesystem. A plain `ansible.builtin.copy`
+# with a control-node-local `src` therefore can't reach the artifact. Fixed
+# here by fetching it over HTTP instead, directly on airdr-detect (no
+# delegate_to) — model_artifact_url below must point at wherever the
+# verified artifact is currently being served on the LAN (e.g. a short-lived
+# `python3 -m http.server`, firewalled to airdr-detect's IP only, torn down
+# again once this playbook has run) — with `get_url`'s own `checksum` param
+# doing the integrity check during the transfer, not just after.
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_m2_service.yml --limit airdr-detect
+
+- name: Deploy the M2 behavioral ransomware inference service on airdr-detect
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    m2_dir: /opt/airdr-m2
+    m2_pkg_dir: "{{ m2_dir }}/m2"
+    venv_dir: "{{ m2_pkg_dir }}/venv"
+    m2_repo_url: https://github.com/DevilDeveloper7/AI-RDR.git
+    m2_repo_version: m2/pavel-weeks-1-4
+    # Temporary LAN staging location for the verified artifact - see the
+    # "Transport note" above. This placeholder MUST be overridden with
+    # -e model_artifact_url=... pointing at wherever your own build staged
+    # the verified artifact for this run.
+    model_artifact_url: http://staging-host.example.invalid:8899/random_forest.joblib
+    model_artifact_md5: 38f95b1bc15ed659aaee2b8d5f98c6d5
+    model_dest: "{{ m2_pkg_dir }}/artifacts/models/random_forest.joblib"
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+
+  tasks:
+    - name: Install Python build deps + venv support (git already present on this host)
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-venv
+          - python3-pip
+          - build-essential
+          - git
+        state: present
+        update_cache: true
+
+    - name: Ensure the M2 project directory exists, owned by {{ ssh_user }}
+      ansible.builtin.file:
+        path: "{{ m2_dir }}"
+        state: directory
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "0755"
+
+    - name: Clone M2's source (DevilDeveloper7/AI-RDR.git, branch m2/pavel-weeks-1-4) — separate repo/codebase from ai-rdr-backend
+      ansible.builtin.git:
+        repo: "{{ m2_repo_url }}"
+        dest: "{{ m2_dir }}"
+        version: "{{ m2_repo_version }}"
+      become_user: "{{ ssh_user }}"
+
+    - name: Create the M2 Python venv (inside m2/, where pyproject.toml lives)
+      ansible.builtin.command: python3 -m venv {{ venv_dir }}
+      args:
+        creates: "{{ venv_dir }}/bin/activate"
+      become_user: "{{ ssh_user }}"
+
+    - name: Install M2's package with the api + ml extras (pip install -e '.[api,ml]')
+      ansible.builtin.pip:
+        name: "{{ m2_pkg_dir }}[api,ml]"
+        editable: true
+        virtualenv: "{{ venv_dir }}"
+        state: present
+      become_user: "{{ ssh_user }}"
+
+    - name: Ensure the model artifacts directory exists
+      ansible.builtin.file:
+        path: "{{ m2_pkg_dir }}/artifacts/models"
+        state: directory
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "0750"
+
+    - name: Fetch the verified model artifact onto airdr-detect over HTTP (see "Transport note" above — get_url runs on airdr-detect itself, no control-node copy involved)
+      ansible.builtin.get_url:
+        url: "{{ model_artifact_url }}"
+        dest: "{{ model_dest }}"
+        checksum: "md5:{{ model_artifact_md5 }}"
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "0640"
+
+    - name: Verify the fetched artifact's checksum on the target matches the staged one (belt-and-suspenders on top of get_url's own checksum check)
+      ansible.builtin.stat:
+        path: "{{ model_dest }}"
+        checksum_algorithm: md5
+      register: deployed_model_stat
+
+    - name: Fail if the copy didn't land correctly
+      ansible.builtin.fail:
+        msg: >-
+          {{ model_dest }} on airdr-detect has md5 {{ deployed_model_stat.stat.checksum | default('MISSING') }},
+          expected {{ model_artifact_md5 }} — the copy did not succeed, do not proceed.
+      when: >-
+        not deployed_model_stat.stat.exists
+        or deployed_model_stat.stat.checksum != model_artifact_md5
+
+    - name: Write the M2 inference service systemd unit (alert-only, display-only — see header comment)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/airdr-m2.service
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=AI-RDR M2 behavioral ransomware inference API (Pavel's m2_pipeline) — alert-only, display-only signal, never authorization for automatic containment (see M2_API_CONTRACT.md)
+          After=network.target
+
+          [Service]
+          Type=simple
+          User={{ ssh_user }}
+          WorkingDirectory={{ m2_pkg_dir }}
+          Environment=AI_RDR_MODEL_PATH={{ model_dest }}
+          ExecStart={{ venv_dir }}/bin/ai-rdr-m2-api
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd, enable and (re)start the M2 service
+      ansible.builtin.systemd:
+        name: airdr-m2
+        daemon_reload: true
+        enabled: true
+        state: restarted
+
+    - name: Give the service a moment to bind its port
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 8000
+        timeout: 20
+
+    - name: Verify /health returns 200 (always 200 regardless of model state)
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8000/health
+        return_content: true
+      register: m2_health
+
+    - name: Verify /v1/model returns 200 with real model metadata (NOT 503 — a 503 here means the artifact isn't actually in place)
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8000/v1/model
+        return_content: true
+        status_code: 200
+      register: m2_model
+      retries: 5
+      delay: 2
+      until: m2_model.status == 200
+
+    - name: Smoke-test /v1/predict with a minimal fabricated event batch (confirms the model is actually loaded and inferring)
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8000/v1/predict
+        method: POST
+        body_format: json
+        body:
+          run_id: deploy-smoke-test
+          events:
+            - timestamp: 1700000000.0
+              event_type: openat
+            - timestamp: 1700000001.0
+              event_type: write
+        status_code: 200
+        return_content: true
+      register: m2_predict
+
+    - name: Show the service unit status
+      ansible.builtin.command: systemctl status airdr-m2.service --no-pager
+      register: m2_service_status
+      changed_when: false
+
+    - name: Show verification results (report these back — don't round up partial success)
+      ansible.builtin.debug:
+        msg:
+          health_response: "{{ m2_health.json }}"
+          model_response: "{{ m2_model.json }}"
+          predict_response: "{{ m2_predict.json }}"
+          service_status: "{{ m2_service_status.stdout_lines }}"

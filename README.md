@@ -21,6 +21,32 @@ case management.
   Regression/Random Forest/XGBoost evaluation, TreeSHAP, an alert-only inference
   API, tests, model documentation, and compact evaluation reports. Raw datasets,
   virtual environments, and generated model binaries are intentionally excluded.
+- **`backend/`** — the real IRDP/Risk Fusion/ARM/AICM application: event
+  normalization and windowing, the RF+XGB anomaly-scoring ensemble, threat-intel
+  enrichment (with caching and a degraded-mode-safe fallback), the graded
+  response module (approval gating, full undo support), the incident case
+  manager, PathPredict, and `m2_client.py` — the integration seam that adapts
+  `m2/`'s independently-developed model into this pipeline as a second,
+  display-only opinion that `backend/risk_fusion.py`'s `fuse()` never reads
+  (see that module's own docstring for the full scope boundary). A trained
+  ensemble snapshot ships under `models/registry/`.
+- **`pipeline/`** — offline dataset loaders/feature extraction/training code for
+  the project's own RF+XGB ensemble (separate from `m2/`'s own training
+  pipeline, trained on a different, only-partially-overlapping set of
+  datasets).
+
+### Testing: mock services, not live infrastructure
+
+`backend/`'s test suite (run with `pytest backend/tests/`) exercises the full
+detect → decide → respond → case pipeline end to end using fakes in place of
+every live dependency — `FakeEventSource`, `FakeThreatIntelClient`,
+`FakeM2Client`, `FakeHostController`, `InMemoryCaseStore`, and others in
+`backend/tests/fakes.py` — so the whole pipeline's logic is independently
+verifiable by anyone cloning this repo, with no real SIEM, OpenSearch cluster,
+SSH-reachable host, or M2 service required. Live infrastructure verification
+(real alerts, real approved actions, real reversal) is documented separately
+in `docs/system-architecture.md`, since that can't be reproduced outside the
+original test environment.
 
 ## Layered architecture
 

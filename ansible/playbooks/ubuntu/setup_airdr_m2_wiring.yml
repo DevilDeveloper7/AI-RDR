@@ -1,0 +1,286 @@
+# AI-RDR capstone project — wires the already-merged RealM2Client
+# (backend/m2_client.py, part of ai-rdr-backend — NOT touched by this
+# playbook) into the production IRDP polling entrypoint, run_irdp.py, so
+# every 30s poll cycle starts attaching Pavel's M2 behavioral-ransomware
+# opinion to each ai-rdr-ml-detections-* document it writes
+# (m2-integration-spec.md Part 2 / task m2-deployment).
+#
+# MUST run only after setup_airdr_m2_service.yml's airdr-m2.service is
+# confirmed healthy (GET /v1/model returning real metadata, not 503) — this
+# playbook does not deploy or verify the M2 service itself, only wires its
+# already-running, same-host URL into run_irdp.py.
+#
+# Scope boundary (does not change, just restated for this playbook's own
+# reviewers): M2's opinion is attached under run_once()'s own m2_client
+# param purely as a denormalized `m2` field on the existing ML detection
+# document — backend/risk_fusion.py's fuse() is never touched by this
+# change and never reads that field, so this wiring cannot affect
+# risk_tier or trigger automatic containment. RealM2Client needs no secret/
+# env file at all (base_url is a same-host URL constant, not a credential)
+# and degrades to "no opinion" (None) on any connection error, timeout,
+# non-2xx (503 included — the real, expected "no model" state before this
+# task ran), or malformed body — exactly like threat-intel's
+# NullThreatIntelClient fallback — so this entrypoint cannot crash because
+# of it, even if airdr-m2.service is later stopped.
+#
+# Follows the exact idempotent-assert-then-deploy pattern established by
+# setup_airdr_threat_intel_cache.yml's third play (slurp current
+# run_irdp.py, assert it matches a known-good shape before overwriting,
+# deploy the new full file, restart the timer, run one immediate poll, wait
+# for it, fail loudly if it didn't succeed).
+#
+# Usage:
+#   ansible-playbook playbooks/ubuntu/setup_airdr_m2_wiring.yml --limit airdr-detect
+
+- name: Wire RealM2Client into run_irdp.py and verify one live poll
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    airdr_dir: /opt/airdr-detect
+    run_irdp_path: "{{ airdr_dir }}/run_irdp.py"
+    ssh_user: "{{ hostvars[inventory_hostname]['ssh_user'] | default(hostvars[inventory_hostname]['ansible_user']) }}"
+
+  tasks:
+    - name: Confirm airdr-m2.service is active before wiring it into production polling
+      ansible.builtin.command: systemctl is-active airdr-m2.service
+      register: m2_service_active
+      changed_when: false
+      failed_when: false
+
+    - name: Fail if airdr-m2.service isn't active (run setup_airdr_m2_service.yml first and confirm it's healthy)
+      ansible.builtin.fail:
+        msg: >-
+          airdr-m2.service is not active ({{ m2_service_active.stdout }}) - run
+          setup_airdr_m2_service.yml and confirm /v1/model returns real metadata
+          (not 503) before wiring it into run_irdp.py.
+      when: m2_service_active.stdout != "active"
+
+    - name: Read the current run_irdp.py (sanity check before overwriting it)
+      ansible.builtin.slurp:
+        path: "{{ run_irdp_path }}"
+      register: current_run_irdp
+
+    - name: Fail loudly if run_irdp.py doesn't look the way this task expects (avoid clobbering unrelated drift)
+      ansible.builtin.assert:
+        that:
+          # Idempotent across reruns: accept EITHER the pre-M2-wiring shape
+          # (first-time wiring here, no RealM2Client import yet) OR this
+          # task's own already-deployed shape (a rerun) - only a file that
+          # matches NEITHER is unexpected drift worth stopping for.
+          - >-
+            ('from backend.m2_client import RealM2Client' not in (current_run_irdp.content | b64decode))
+            or ('m2_client=RealM2Client(base_url=M2_BASE_URL)' in (current_run_irdp.content | b64decode))
+          - "'_build_threat_intel_client()' in (current_run_irdp.content | b64decode)"
+          - "'trigger_sender=HttpTriggerSender(base_url=ARM_BASE_URL)' in (current_run_irdp.content | b64decode)"
+        fail_msg: >-
+          run_irdp.py does not contain the expected threat-intel/trigger-sender wiring
+          from prior tasks, nor this task's own RealM2Client wiring - refusing to
+          overwrite until this is checked by hand (the file has drifted further than
+          this task accounts for).
+        success_msg: "run_irdp.py has an expected shape (pre-M2-wiring or already-wired) - safe to (re)deploy."
+
+    - name: Deploy the updated IRDP polling entrypoint (adds RealM2Client, display-only — every other argument unchanged)
+      ansible.builtin.copy:
+        dest: "{{ run_irdp_path }}"
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: "0750"
+        content: |
+          #!/usr/bin/env python3
+          """
+          IRDP polling entrypoint - wraps backend.irdp.pipeline.run_once() in
+          a single invocation, meant to be called repeatedly by the
+          irdp-poll.timer systemd timer (setup_airdr_irdp_service.yml), not
+          run directly as a long-lived process (run_once() is deliberately
+          single-pass - see backend/irdp/__init__.py's package docstring).
+
+          Reads OpenSearch credentials from irdp.env (populated from
+          Infisical by setup_airdr_irdp_writer.yml) - never hardcoded here.
+          Uses FileCheckpointStore so a restart doesn't reprocess events
+          already written.
+
+          Risk Fusion wiring (task 4.5, risk-fusion-deployment-task.md):
+          HttpTriggerSender points at airdr-flask's own /api/arm/trigger,
+          verified bound on 0.0.0.0:5000 (ARM_BASE_URL below), same host.
+
+          Threat-intel wiring (task 4.3 Phase B,
+          threat-intel-deployment-spec.md Part 2): a real
+          CachedThreatIntelClient(RealVirusTotalClient,
+          OpenSearchThreatIntelCache) is built from threat_intel.env
+          (populated from Infisical's /threat-intel-credentials by
+          setup_airdr_threat_intel_cache.yml), with an explicit, logged
+          fallback to NullThreatIntelClient if VIRUSTOTAL_API_KEY is
+          missing/unset or threat_intel.env itself doesn't exist - this
+          entrypoint must never crash just because threat-intel enrichment
+          isn't configured (SRS AVAIL-1.2 degraded-mode requirement).
+
+          M2 wiring (task m2-integration/m2-deployment,
+          m2-integration-spec.md Part 1-2): RealM2Client points at the
+          separately-deployed airdr-m2.service (setup_airdr_m2_service.yml),
+          a same-host FastAPI inference API for Pavel's m2_pipeline
+          behavioral ransomware classifier. Needs no secret or env file at
+          all - M2_BASE_URL below is a same-host URL constant, not a
+          credential, unlike every other integration above. RealM2Client
+          never raises: a connection error, timeout, non-2xx (503 included
+          - M2's own documented "no model loaded" state), or malformed body
+          all degrade to "no M2 opinion this poll" (None), exactly like
+          NullThreatIntelClient's fallback above - this entrypoint cannot
+          crash because M2 is unreachable or stopped. run_once() only
+          attaches M2's result as a denormalized `m2` field on the ML
+          detection document it already writes - backend/risk_fusion.py's
+          fuse() never reads that field, so M2 can never affect risk_tier
+          or trigger automatic containment (see backend/m2_client.py's own
+          module docstring for the full statement of this boundary).
+          """
+          from __future__ import annotations
+
+          import logging
+          import os
+          import sys
+
+          sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+          from backend.irdp import (
+              FileCheckpointStore,
+              OpenSearchEventWriter,
+              RealWazuhEventSource,
+              run_once,
+          )
+          from backend.m2_client import RealM2Client
+          from backend.risk_fusion import (
+              CachedThreatIntelClient,
+              HttpTriggerSender,
+              NullThreatIntelClient,
+              OpenSearchThreatIntelCache,
+              RealVirusTotalClient,
+          )
+
+          logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+          log = logging.getLogger("irdp")
+
+          ENV_PATH = "/opt/airdr-detect/irdp.env"
+          THREAT_INTEL_ENV_PATH = "/opt/airdr-detect/threat_intel.env"
+          CHECKPOINT_PATH = "/opt/airdr-detect/irdp_checkpoint.json"
+          ARM_BASE_URL = "http://localhost:5000"
+          M2_BASE_URL = "http://127.0.0.1:8000"
+
+
+          def _load_env(path: str) -> dict:
+              env = {}
+              with open(path) as f:
+                  for line in f:
+                      line = line.strip()
+                      if not line or "=" not in line:
+                          continue
+                      key, value = line.split("=", 1)
+                      env[key] = value
+              return env
+
+
+          def _build_threat_intel_client():
+              if not os.path.exists(THREAT_INTEL_ENV_PATH):
+                  log.warning(
+                      "%s not found - falling back to NullThreatIntelClient", THREAT_INTEL_ENV_PATH
+                  )
+                  return NullThreatIntelClient()
+
+              ti_env = _load_env(THREAT_INTEL_ENV_PATH)
+              vt_key = ti_env.get("VIRUSTOTAL_API_KEY")
+              if not vt_key:
+                  log.warning("VIRUSTOTAL_API_KEY not set - falling back to NullThreatIntelClient")
+                  return NullThreatIntelClient()
+
+              real_client = RealVirusTotalClient(api_key=vt_key)
+              cache = OpenSearchThreatIntelCache(
+                  host=ti_env["THREAT_INTEL_OPENSEARCH_HOST"],
+                  username=ti_env["THREAT_INTEL_OPENSEARCH_USER"],
+                  password=ti_env["THREAT_INTEL_OPENSEARCH_PASSWORD"],
+                  port=int(ti_env["THREAT_INTEL_OPENSEARCH_PORT"]),
+              )
+              return CachedThreatIntelClient(real_client, cache)
+
+
+          def main() -> int:
+              env = _load_env(ENV_PATH)
+              host = env["IRDP_OPENSEARCH_HOST"]
+              user = env["IRDP_OPENSEARCH_USER"]
+              password = env["IRDP_OPENSEARCH_PASSWORD"]
+              port = int(env["IRDP_OPENSEARCH_PORT"])
+
+              source = RealWazuhEventSource(host=host, username=user, password=password, port=port)
+              writer = OpenSearchEventWriter(host=host, username=user, password=password, port=port)
+              checkpoint_store = FileCheckpointStore(CHECKPOINT_PATH)
+
+              summary = run_once(
+                  source,
+                  checkpoint_store,
+                  writer,
+                  threat_intel_client=_build_threat_intel_client(),
+                  trigger_sender=HttpTriggerSender(base_url=ARM_BASE_URL),
+                  m2_client=RealM2Client(base_url=M2_BASE_URL),
+              )
+              log.info("run_once summary: %s", summary)
+              return 0
+
+
+          if __name__ == "__main__":
+              sys.exit(main())
+
+    - name: Reload systemd (no unit changed, but keep this step for parity with sibling playbooks)
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Restart the IRDP poll timer
+      ansible.builtin.systemd:
+        name: irdp-poll.timer
+        enabled: true
+        state: restarted
+
+    - name: Run one poll immediately (don't wait for the first timer tick to find out if it's broken)
+      ansible.builtin.systemd:
+        name: irdp-poll.service
+        state: started
+
+    - name: Wait for the immediate run to finish
+      ansible.builtin.command: systemctl is-active irdp-poll.service
+      register: irdp_run_status
+      until: irdp_run_status.stdout != "activating"
+      retries: 10
+      delay: 2
+      changed_when: false
+      failed_when: false
+
+    - name: Show the immediate run's outcome
+      ansible.builtin.command: systemctl show irdp-poll.service -p Result -p ExecMainStatus
+      register: irdp_run_result
+      changed_when: false
+
+    - name: Fail if the immediate run didn't succeed
+      ansible.builtin.fail:
+        msg: "irdp-poll.service did not succeed: {{ irdp_run_result.stdout }}"
+      when: "'Result=success' not in irdp_run_result.stdout"
+
+    - name: Show recent journal output from the immediate run
+      ansible.builtin.command: journalctl -u irdp-poll.service -n 40 --no-pager
+      register: irdp_journal
+      changed_when: false
+
+    - name: Re-check that airdr-m2.service is still healthy and wasn't disturbed by this change
+      ansible.builtin.command: systemctl is-active airdr-m2.service
+      register: m2_service_active_after
+      changed_when: false
+      failed_when: false
+
+    - name: Fail if airdr-m2.service was disturbed by this play
+      ansible.builtin.fail:
+        msg: "airdr-m2.service is no longer active after wiring run_irdp.py: {{ m2_service_active_after.stdout }}"
+      when: m2_service_active_after.stdout != "active"
+
+    - name: Show verification info
+      ansible.builtin.debug:
+        msg:
+          irdp_run_result: "{{ irdp_run_result.stdout }}"
+          journal_tail: "{{ irdp_journal.stdout_lines }}"
+          m2_service_after: "{{ m2_service_active_after.stdout }}"
