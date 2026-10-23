@@ -1,0 +1,100 @@
+{
+ "meta": {
+  "is_mock": true,
+  "note": "Representative MOCK values. Not real M2 model output."
+ },
+ "explanations": {
+  "A-2041": {
+   "model": "XGBoost",
+   "ransomware_likelihood": 0.94,
+   "explained_at": "2026-09-29T09:41:15Z",
+   "summary": "The alert was primarily influenced by unusually high file-write activity and elevated rename operations. Backup-process similarity slightly reduced confidence.",
+   "features": [
+    {
+     "feature": "write_rate",
+     "value": 0.42
+    },
+    {
+     "feature": "rename_ratio",
+     "value": 0.27
+    },
+    {
+     "feature": "syscall_frequency",
+     "value": 0.21
+    },
+    {
+     "feature": "file_operation_rate",
+     "value": 0.15
+    },
+    {
+     "feature": "process_activity",
+     "value": 0.09
+    },
+    {
+     "feature": "user_session_age",
+     "value": -0.06
+    },
+    {
+     "feature": "known_backup_process",
+     "value": -0.11
+    }
+   ]
+  },
+  "A-2039": {
+   "model": "XGBoost",
+   "ransomware_likelihood": 0.78,
+   "explained_at": "2026-09-29T09:22:09Z",
+   "summary": "Elevated file-write and syscall activity contributed most. A recognised backup process reduced confidence, and verification later found a false positive.",
+   "features": [
+    {
+     "feature": "write_rate",
+     "value": 0.29
+    },
+    {
+     "feature": "syscall_frequency",
+     "value": 0.18
+    },
+    {
+     "feature": "file_operation_rate",
+     "value": 0.12
+    },
+    {
+     "feature": "rename_ratio",
+     "value": 0.05
+    },
+    {
+     "feature": "known_backup_process",
+     "value": -0.19
+    }
+   ]
+  },
+  "A-2038": {
+   "model": "XGBoost",
+   "ransomware_likelihood": 0.66,
+   "explained_at": "2026-09-29T08:57:41Z",
+   "summary": "File-operation rate and write activity contributed most, with a moderate likelihood overall.",
+   "features": [
+    {
+     "feature": "file_operation_rate",
+     "value": 0.22
+    },
+    {
+     "feature": "write_rate",
+     "value": 0.19
+    },
+    {
+     "feature": "process_activity",
+     "value": 0.11
+    },
+    {
+     "feature": "rename_ratio",
+     "value": 0.07
+    },
+    {
+     "feature": "user_session_age",
+     "value": -0.08
+    }
+   ]
+  }
+ }
+}

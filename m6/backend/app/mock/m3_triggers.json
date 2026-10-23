@@ -1,0 +1,96 @@
+{
+ "meta": {
+  "is_mock": true,
+  "note": "MOCK DATA. Not produced by a real module."
+ },
+ "triggers": [
+  {
+   "alert_id": "A-2042",
+   "severity": "Critical",
+   "host": "HOST-03",
+   "process": "enc_worker.py (PID 4127)",
+   "honey_file": "/home/shared/budget_report.docx",
+   "event": "IN_MODIFY, IN_OPEN by PID 4127",
+   "activity": "Honey file modified",
+   "timestamp": "2026-09-29T09:41:15Z",
+   "high_confidence": true
+  },
+  {
+   "alert_id": "A-2037",
+   "severity": "High",
+   "host": "HOST-02",
+   "process": "python3 (PID 9310)",
+   "honey_file": "/srv/finance/payroll_q3.xlsx",
+   "event": "IN_MODIFY, IN_OPEN by PID 9310",
+   "activity": "Honey file modified",
+   "timestamp": "2026-09-29T08:10:02Z",
+   "high_confidence": true
+  },
+  {
+   "alert_id": "A-2022",
+   "severity": "Critical",
+   "host": "HOST-03",
+   "process": "enc_worker.py (PID 4127)",
+   "honey_file": "/home/shared/decoy.docx",
+   "event": "IN_MODIFY, IN_OPEN by PID 4127",
+   "activity": "Honey file modified",
+   "timestamp": "2026-09-29T00:41:15Z",
+   "high_confidence": true
+  },
+  {
+   "alert_id": "A-2017",
+   "severity": "High",
+   "host": "HOST-02",
+   "process": "python3 (PID 9310)",
+   "honey_file": "/home/shared/decoy.docx",
+   "event": "IN_MODIFY, IN_OPEN by PID 9310",
+   "activity": "Honey file modified",
+   "timestamp": "2026-09-28T23:10:02Z",
+   "high_confidence": true
+  },
+  {
+   "alert_id": "A-2002",
+   "severity": "Critical",
+   "host": "HOST-03",
+   "process": "enc_worker.py (PID 4127)",
+   "honey_file": "/home/shared/decoy.docx",
+   "event": "IN_MODIFY, IN_OPEN by PID 4127",
+   "activity": "Honey file modified",
+   "timestamp": "2026-09-28T15:41:15Z",
+   "high_confidence": true
+  },
+  {
+   "alert_id": "A-1997",
+   "severity": "High",
+   "host": "HOST-02",
+   "process": "python3 (PID 9310)",
+   "honey_file": "/home/shared/decoy.docx",
+   "event": "IN_MODIFY, IN_OPEN by PID 9310",
+   "activity": "Honey file modified",
+   "timestamp": "2026-09-28T14:10:02Z",
+   "high_confidence": true
+  },
+  {
+   "alert_id": "A-1982",
+   "severity": "Critical",
+   "host": "HOST-03",
+   "process": "enc_worker.py (PID 4127)",
+   "honey_file": "/home/shared/decoy.docx",
+   "event": "IN_MODIFY, IN_OPEN by PID 4127",
+   "activity": "Honey file modified",
+   "timestamp": "2026-09-28T06:41:15Z",
+   "high_confidence": true
+  },
+  {
+   "alert_id": "A-1977",
+   "severity": "High",
+   "host": "HOST-02",
+   "process": "python3 (PID 9310)",
+   "honey_file": "/home/shared/decoy.docx",
+   "event": "IN_MODIFY, IN_OPEN by PID 9310",
+   "activity": "Honey file modified",
+   "timestamp": "2026-09-28T05:10:02Z",
+   "high_confidence": true
+  }
+ ]
+}

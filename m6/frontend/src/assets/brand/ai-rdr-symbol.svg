@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="t">
+  <title id="t">AI-RDR</title>
+  <!-- Two interlocking brackets (detect and respond) closing around a single focal point. -->
+  <g stroke-width="10">
+    <path d="M55 9V35A20 20 0 0 1 35 55H9" stroke="#C81E1E"/>
+    <path d="M9 55V29A20 20 0 0 1 29 9H55" stroke="#171717"/>
+    <path d="M9 55H24" stroke="#C81E1E"/>
+  </g>
+  <rect x="29" y="29" width="6" height="6" fill="#171717" transform="rotate(45 32 32)"/>
+</svg>

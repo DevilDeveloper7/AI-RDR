@@ -1,0 +1,1856 @@
+{
+ "meta": {
+  "is_mock": true,
+  "note": "MOCK DATA. Not produced by a real module."
+ },
+ "cases": [
+  {
+   "alert_id": "A-2042",
+   "response_state": "Frozen",
+   "verification_state": "Verifying",
+   "history": [
+    {
+     "timestamp": "2026-09-29T09:41:15Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T09:41:16Z",
+     "event": "Verification started"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2041",
+   "response_state": "Frozen",
+   "verification_state": "Verifying",
+   "history": [
+    {
+     "timestamp": "2026-09-29T09:41:15Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T09:41:16Z",
+     "event": "Verification started"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2040",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T09:33:53Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T09:33:54Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T09:33:56Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T09:33:57Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2039",
+   "response_state": "Thawed",
+   "verification_state": "Analyst override",
+   "history": [
+    {
+     "timestamp": "2026-09-29T09:22:09Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T09:22:10Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T09:22:12Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T09:22:13Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2038",
+   "response_state": "Frozen",
+   "verification_state": "Verifying",
+   "history": [
+    {
+     "timestamp": "2026-09-29T08:57:41Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T08:57:42Z",
+     "event": "Verification started"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2037",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-29T08:10:02Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T08:10:03Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T08:10:04Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-29T08:10:05Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2036",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-29T07:52:32Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T07:52:33Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T07:52:34Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-29T07:52:35Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2035",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T07:31:10Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T07:31:11Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T07:31:13Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T07:31:14Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2034",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-29T06:58:21Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T06:58:22Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T06:58:23Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-29T06:58:24Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2033",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T06:41:04Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T06:41:05Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T06:41:07Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T06:41:08Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2032",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T06:15:45Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T06:15:46Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T06:15:48Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T06:15:49Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2031",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T05:47:27Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T05:47:28Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T05:47:30Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T05:47:31Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2030",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T05:22:11Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T05:22:12Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T05:22:14Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T05:22:15Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2029",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T04:58:34Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T04:58:35Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T04:58:37Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T04:58:38Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2028",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-29T04:30:08Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T04:30:09Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T04:30:10Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-29T04:30:11Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2027",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T03:44:53Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T03:44:54Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T03:44:56Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T03:44:57Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2026",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T03:12:19Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T03:12:20Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T03:12:22Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T03:12:23Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2025",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T02:36:41Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T02:36:42Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T02:36:44Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T02:36:45Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2024",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T01:58:10Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T01:58:11Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T01:58:13Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T01:58:14Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2023",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T01:21:36Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T01:21:37Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T01:21:39Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T01:21:40Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2022",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-29T00:41:15Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T00:41:16Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T00:41:17Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-29T00:41:18Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2021",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-29T00:41:15Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T00:41:16Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T00:41:17Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-29T00:41:18Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2020",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T00:33:53Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T00:33:54Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T00:33:56Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T00:33:57Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2019",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-29T00:22:09Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-29T00:22:10Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-29T00:22:12Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-29T00:22:13Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2018",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T23:57:41Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T23:57:42Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T23:57:43Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T23:57:44Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2017",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T23:10:02Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T23:10:03Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T23:10:04Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T23:10:05Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2016",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T22:52:32Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T22:52:33Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T22:52:34Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T22:52:35Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2015",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T22:31:10Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T22:31:11Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T22:31:13Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T22:31:14Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2014",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T21:58:21Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T21:58:22Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T21:58:23Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T21:58:24Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2013",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T21:41:04Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T21:41:05Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T21:41:07Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T21:41:08Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2012",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T21:15:45Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T21:15:46Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T21:15:48Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T21:15:49Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2011",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T20:47:27Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T20:47:28Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T20:47:30Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T20:47:31Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2010",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T20:22:11Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T20:22:12Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T20:22:14Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T20:22:15Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2009",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T19:58:34Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T19:58:35Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T19:58:37Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T19:58:38Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2008",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T19:30:08Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T19:30:09Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T19:30:10Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T19:30:11Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2007",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T18:44:53Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T18:44:54Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T18:44:56Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T18:44:57Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2006",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T18:12:19Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T18:12:20Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T18:12:22Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T18:12:23Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2005",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T17:36:41Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T17:36:42Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T17:36:44Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T17:36:45Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2004",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T16:58:10Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T16:58:11Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T16:58:13Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T16:58:14Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2003",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T16:21:36Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T16:21:37Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T16:21:39Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T16:21:40Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2002",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T15:41:15Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T15:41:16Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T15:41:17Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T15:41:18Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2001",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T15:41:15Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T15:41:16Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T15:41:17Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T15:41:18Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-2000",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T15:33:53Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T15:33:54Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T15:33:56Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T15:33:57Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1999",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T15:22:09Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T15:22:10Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T15:22:12Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T15:22:13Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1998",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T14:57:41Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T14:57:42Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T14:57:43Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T14:57:44Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1997",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T14:10:02Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T14:10:03Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T14:10:04Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T14:10:05Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1996",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T13:52:32Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T13:52:33Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T13:52:34Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T13:52:35Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1995",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T13:31:10Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T13:31:11Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T13:31:13Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T13:31:14Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1994",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T12:58:21Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T12:58:22Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T12:58:23Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T12:58:24Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1993",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T12:41:04Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T12:41:05Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T12:41:07Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T12:41:08Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1992",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T12:15:45Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T12:15:46Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T12:15:48Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T12:15:49Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1991",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T11:47:27Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T11:47:28Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T11:47:30Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T11:47:31Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1990",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T11:22:11Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T11:22:12Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T11:22:14Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T11:22:15Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1989",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T10:58:34Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T10:58:35Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T10:58:37Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T10:58:38Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1988",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T10:30:08Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T10:30:09Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T10:30:10Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T10:30:11Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1987",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T09:44:53Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T09:44:54Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T09:44:56Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T09:44:57Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1986",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T09:12:19Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T09:12:20Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T09:12:22Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T09:12:23Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1985",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T08:36:41Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T08:36:42Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T08:36:44Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T08:36:45Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1984",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T07:58:10Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T07:58:11Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T07:58:13Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T07:58:14Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1983",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T07:21:36Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T07:21:37Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T07:21:39Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T07:21:40Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1982",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T06:41:15Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T06:41:16Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T06:41:17Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T06:41:18Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1981",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T06:41:15Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T06:41:16Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T06:41:17Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T06:41:18Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1980",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T06:33:53Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T06:33:54Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T06:33:56Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T06:33:57Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1979",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T06:22:09Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T06:22:10Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T06:22:12Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T06:22:13Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1978",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T05:57:41Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T05:57:42Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T05:57:43Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T05:57:44Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1977",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T05:10:02Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T05:10:03Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T05:10:04Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T05:10:05Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1976",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T04:52:32Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T04:52:33Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T04:52:34Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T04:52:35Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1975",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T04:31:10Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T04:31:11Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T04:31:13Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T04:31:14Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1974",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T03:58:21Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T03:58:22Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T03:58:23Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T03:58:24Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1973",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T03:41:04Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T03:41:05Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T03:41:07Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T03:41:08Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1972",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T03:15:45Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T03:15:46Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T03:15:48Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T03:15:49Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1971",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T02:47:27Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T02:47:28Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T02:47:30Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T02:47:31Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1970",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T02:22:11Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T02:22:12Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T02:22:14Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T02:22:15Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1969",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T01:58:34Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T01:58:35Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T01:58:37Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T01:58:38Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1968",
+   "response_state": "Isolated",
+   "verification_state": "Confirmed",
+   "history": [
+    {
+     "timestamp": "2026-09-28T01:30:08Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T01:30:09Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T01:30:10Z",
+     "event": "Verification confirmed"
+    },
+    {
+     "timestamp": "2026-09-28T01:30:11Z",
+     "event": "Isolation initiated"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1967",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T00:44:53Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T00:44:54Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T00:44:56Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T00:44:57Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1966",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-28T00:12:19Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-28T00:12:20Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-28T00:12:22Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-28T00:12:23Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1965",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-27T23:36:41Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-27T23:36:42Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-27T23:36:44Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-27T23:36:45Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1964",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-27T22:58:10Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-27T22:58:11Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-27T22:58:13Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-27T22:58:14Z",
+     "event": "Process thawed"
+    }
+   ]
+  },
+  {
+   "alert_id": "A-1963",
+   "response_state": "Thawed",
+   "verification_state": "False positive",
+   "history": [
+    {
+     "timestamp": "2026-09-27T22:21:36Z",
+     "event": "Process frozen"
+    },
+    {
+     "timestamp": "2026-09-27T22:21:37Z",
+     "event": "Verification started"
+    },
+    {
+     "timestamp": "2026-09-27T22:21:39Z",
+     "event": "Verification: false positive"
+    },
+    {
+     "timestamp": "2026-09-27T22:21:40Z",
+     "event": "Process thawed"
+    }
+   ]
+  }
+ ],
+ "audit": [
+  {
+   "timestamp": "2026-09-29T09:41:16Z",
+   "event": "Verification started",
+   "detail": "HOST-03 · PID 4127",
+   "alert_id": "A-2041"
+  },
+  {
+   "timestamp": "2026-09-29T09:41:15Z",
+   "event": "Freeze",
+   "detail": "HOST-03 · PID 4127",
+   "alert_id": "A-2042"
+  },
+  {
+   "timestamp": "2026-09-29T09:22:31Z",
+   "event": "Thaw",
+   "detail": "HOST-01 · PID 1893",
+   "alert_id": "A-2039"
+  },
+  {
+   "timestamp": "2026-09-29T09:22:30Z",
+   "event": "Analyst override",
+   "detail": "A. Khan · false positive",
+   "alert_id": "A-2039"
+  },
+  {
+   "timestamp": "2026-09-29T08:10:06Z",
+   "event": "Isolation",
+   "detail": "HOST-02 · PID 9310",
+   "alert_id": "A-2037"
+  }
+ ]
+}

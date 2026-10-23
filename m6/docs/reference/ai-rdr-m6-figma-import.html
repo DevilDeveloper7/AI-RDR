@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI-RDR · M6 Analyst Console</title>
+<style>
+:root{--primary-red:#C81E1E;--primary-red-dark:#9F1717;--primary-red-light:#FCE8E8;--background:#F7F7F8;--surface:#fff;--surface-secondary:#F2F2F4;--text-primary:#171717;--text-secondary:#6B7280;--border:#E4E4E7;--success:#15803D;--warning:#B45309;--danger:#C81E1E;--r:6px;color-scheme:light}
+*{box-sizing:border-box}html,body{margin:0}
+body{font:14px/1.45 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#E9E9EC;color:var(--text-primary);padding:48px 40px;min-width:1520px}
+button{font:inherit;cursor:pointer}svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid var(--primary-red);outline-offset:2px}
+aside{width:232px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 12px;flex:none}
+.logo{display:flex;gap:10px;align-items:center;padding:4px 8px 18px;font-weight:700;font-size:15px}.logo i{width:26px;height:26px;background:var(--primary-red);color:#fff;border-radius:6px;display:grid;place-items:center}.logo small{display:block;font-weight:400;color:var(--text-secondary);font-size:11px}
+nav button{display:flex;gap:10px;align-items:center;width:100%;padding:8px 10px;border:0;background:none;border-radius:var(--r);color:var(--text-secondary);text-align:left;margin-bottom:2px;font-weight:500}
+nav button:hover{background:var(--surface-secondary);color:var(--text-primary)}nav button.on{background:var(--primary-red-light);color:var(--primary-red-dark)}
+.sb-foot{margin-top:auto;border-top:1px solid var(--border);padding-top:12px;font-size:12px;color:var(--text-secondary)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--success);margin-right:6px}.dot.r{background:var(--danger)}.dot.a{background:var(--warning)}
+.who{display:flex;gap:8px;align-items:center;margin-top:12px;color:var(--text-primary)}.av{width:28px;height:28px;border-radius:50%;background:var(--text-primary);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:600}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+header{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px;flex:none}
+header h1{font-size:16px;margin:0;font-weight:650}.env{font-size:13px;color:var(--text-secondary);border-left:1px solid var(--border);padding-left:16px;white-space:pre}
+.search{margin-left:auto;display:flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:var(--r);padding:0 10px;background:var(--background);color:var(--text-secondary)}.search input{border:0;background:none;padding:7px 0;width:200px;font:inherit;outline:0}
+.bell{position:relative;border:0;background:none;color:var(--text-secondary);padding:6px}.bell b{position:absolute;top:2px;right:2px;background:var(--primary-red);color:#fff;font-size:10px;border-radius:8px;padding:0 4px}
+#menu{display:none;border:1px solid var(--border);background:var(--surface);border-radius:var(--r);padding:6px}
+main{flex:1;padding:24px}.screen{display:block;max-width:1240px;margin:0 auto}
+.fwrap{margin:0 auto 64px;width:1440px}.flabel{font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:10px}.frame{width:1440px;min-height:1000px;display:flex;background:var(--background);border:1px solid #D4D4D8;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden}@keyframes f{from{opacity:0}to{opacity:1}}
+.ph{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;flex-wrap:wrap}.ph h2{margin:0;font-size:22px;font-weight:650;letter-spacing:-.01em}.ph p{margin:2px 0 0;color:var(--text-secondary)}.ph .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.back{border:0;background:none;color:var(--text-secondary);display:flex;align-items:center;gap:4px;padding:0;margin-bottom:8px}.back:hover{color:var(--text-primary)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}.c12{grid-column:span 12}.c8{grid-column:span 8}.c7{grid-column:span 7}.c6{grid-column:span 6}.c5{grid-column:span 5}.c4{grid-column:span 4}.c3{grid-column:span 3}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.04);min-width:0}
+.card>h3{margin:0;padding:14px 16px;font-size:13px;font-weight:650;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}.card>h3 span{margin-left:auto;font-weight:400;color:var(--text-secondary);font-size:12px}.pad{padding:16px}
+.stat{padding:14px 16px}.stat small{color:var(--text-secondary);font-size:12px}.stat b{display:block;font-size:24px;font-weight:650;margin-top:2px}.stat.crit b{color:var(--primary-red)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--border);background:var(--surface);border-radius:var(--r);font-weight:500;color:var(--text-primary)}.btn:hover{background:var(--surface-secondary)}
+.btn.p{background:var(--primary-red);border-color:var(--primary-red);color:#fff}.btn.p:hover{background:var(--primary-red-dark)}.btn.d{color:var(--primary-red-dark);border-color:#F1B5B5}.btn.d:hover{background:var(--primary-red-light)}.btn:disabled{opacity:.5;cursor:default}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;font-weight:500;font-size:12px;color:var(--text-secondary);padding:9px 16px;background:var(--surface-secondary);border-bottom:1px solid var(--border)}td{padding:10px 16px;border-bottom:1px solid var(--border);vertical-align:middle}tr:last-child td{border:0}
+tbody tr.row{cursor:pointer}tbody tr.row:hover{background:#FAFAFA}tr.sel{background:var(--primary-red-light)!important}.tw{overflow-x:auto}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.mut{color:var(--text-secondary)}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;line-height:1.4;padding:2px 8px;border-radius:4px;white-space:nowrap;color:#fff}.tag svg{width:13px;height:13px}
+.tag.crit{background:#C81E1E}.tag.high{background:#C2410C}.tag.med{background:#F2B705;color:#3B2A00}.tag.ok{background:#15803D}.tag.info{background:#4338CA}.tag.gr{background:#6B7280}
+.lg{display:inline-flex;align-items:center;gap:6px;margin-right:16px}.lg i{width:10px;height:10px;border-radius:2px;display:block}.okl{color:var(--text-secondary);display:flex;gap:6px;align-items:center}.okl svg{color:var(--success)}
+dl{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;margin:0}dt{color:var(--text-secondary)}dd{margin:0}
+.tl{list-style:none;margin:0;padding:0}.tl li{display:flex;gap:12px;padding:0 0 14px 16px;position:relative;border-left:1px solid var(--border);margin-left:6px}.tl li:before{content:"";position:absolute;left:-4px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--text-secondary)}.tl li.hot:before{background:var(--primary-red)}.tl li.pend:before{background:#fff;border:1px solid var(--text-secondary);left:-5px}.tl time{width:64px;flex:none;color:var(--text-secondary)}
+.sec{padding:16px;border-bottom:1px solid var(--border)}.sec:last-child{border:0}.sec h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);font-weight:600}
+.steps{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.steps span{font-size:13px;color:var(--text-secondary)}.steps span+span:before{content:"›";margin-right:6px;color:#A1A1AA}.steps span.done{color:var(--success)}.steps span.cur{color:var(--primary-red-dark);font-weight:650}
+.bar{display:grid;grid-template-columns:150px 1fr 56px;gap:10px;align-items:center;margin:10px 0}.bar .t{background:var(--surface-secondary);height:16px;border-radius:3px;position:relative}.bar i{position:absolute;top:0;bottom:0;border-radius:3px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}.sep{border-left:1px solid var(--border);margin:0 6px}
+.note{background:var(--surface-secondary);border-radius:var(--r);padding:12px;color:var(--text-secondary)}
+.opt{border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:8px}.opt.dz{border-color:#F1B5B5;background:#FFFAFA}
+textarea{width:100%;min-height:70px;border:1px solid var(--border);border-radius:var(--r);padding:8px;font:inherit;resize:vertical}
+#ov{position:fixed;inset:0;background:rgba(23,23,23,.4);display:none;place-items:center;z-index:20;padding:16px}#ov.on{display:grid;animation:f .15s}
+.modal{background:var(--surface);border-radius:10px;max-width:440px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.2)}.modal h3{margin:0 0 6px;font-size:17px}.modal .acts{justify-content:flex-end;margin-top:18px}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--text-primary);color:#fff;padding:10px 14px;border-radius:var(--r);opacity:0;transform:translateY(8px);transition:.2s;z-index:30;pointer-events:none}#toast.on{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<div id="stack"></div>
+<div id="ov" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal" id="modal"></div></div>
+<div id="toast" role="status"></div>
+<script>
+const P={pause:'M14.25 9v6m-4.5 0V9M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',ban:'M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636',help:'M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z',warn2:'M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z',xc:'m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',minus:'M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',clock:'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',dash:'m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25',bell:'M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0',file:'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',globe:'M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z',plug:'M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z',shield:'M12 9v3.75m0-10.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.285Zm0 13.036h.008v.008H12v-.008Z',search:'m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z',menu:'M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5',back:'M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18',check:'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',chart:'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z',alert:'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z'};
+const ic=n=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${P[n]}"/></svg>`;
+
+const A=[
+{id:'A-2042',sev:'Critical',type:'Honey-File Trigger',ts:'09:41:15',host:'HOST-03',proc:'enc_worker.py (PID 4127)',resp:'Frozen',ver:'Verifying',ack:false,ml:false,file:'/home/shared/budget_report.docx'},
+{id:'A-2041',sev:'Critical',type:'ML Behavioural Detection',ts:'09:41:14',host:'HOST-03',proc:'enc_worker.py (PID 4127)',resp:'Frozen',ver:'Verifying',ack:false,ml:true},
+{id:'A-2039',sev:'High',type:'ML Behavioural Detection',ts:'09:22:08',host:'HOST-01',proc:'rsync (PID 1893)',resp:'Thawed',ver:'False positive',ack:true,ml:true},
+{id:'A-2038',sev:'Medium',type:'ML Behavioural Detection',ts:'08:57:40',host:'HOST-05',proc:'tar (PID 22014)',resp:'Frozen',ver:'Verifying',ack:false,ml:true},
+{id:'A-2037',sev:'High',type:'Honey-File Trigger',ts:'08:10:02',host:'HOST-02',proc:'python3 (PID 9310)',resp:'Isolated',ver:'Confirmed',ack:true,ml:false,file:'/srv/finance/payroll_q3.xlsx'}];
+const H=[['HOST-01','invoice_2026.xlsx','/home/shared/','Protected','No activity'],['HOST-02','payroll_q3.xlsx','/srv/finance/','Triggered','08:10:02'],['HOST-03','budget_report.docx','/home/shared/','Triggered','09:41:15'],['HOST-04','contracts_backup.pdf','/mnt/archive/','Protected','No activity'],['HOST-05','customer_list.csv','/home/sales/','Protected','No activity'],['HOST-06','hr_records.docx','/home/hr/','Protected','No activity']];
+const T=[
+{v:'9f2c…e41a',t:'SHA-256',rep:'Malicious',src:'Threat feed (M4)',al:'A-2041',chk:'09:41:17',n:'Hash of enc_worker.py observed on HOST-03. Matches a known ransomware family sample. Context only; the detection decision was made by M2.'},
+{v:'185.220.101.47',t:'IP address',rep:'Suspicious',src:'Threat feed (M4)',al:'A-2041',chk:'09:41:17',n:'Outbound connection attempt from HOST-03 shortly before detection. Listed on a public abuse feed.'},
+{v:'update-cdn-sync.net',t:'Domain',rep:'Suspicious',src:'Threat feed (M4)',al:'A-2042',chk:'09:41:18',n:'Domain resolved by the frozen process. Recently registered; low-confidence reputation.'},
+{v:'3ab8…77d0',t:'SHA-256',rep:'Unknown',src:'Threat feed (M4)',al:'A-2038',chk:'08:57:44',n:'No reputation data returned for this hash.'},
+{v:'10.20.4.15',t:'IP address',rep:'Clean',src:'Internal allowlist',al:'A-2039',chk:'09:22:11',n:'Internal backup server. Supports the false-positive outcome for A-2039.'},
+{v:'c41e…0b92',t:'SHA-256',rep:'Malicious',src:'Threat feed (M4)',al:'A-2037',chk:'08:10:05',n:'Hash of the process that opened payroll_q3.xlsx on HOST-02.'}];
+const I=[['M1','Monitoring / telemetry','Telemetry contract','/api/events','Connected','09:44:02'],['M2','Behavioural ML detection','Detection contract','/api/alerts','Connected','09:44:02'],['M3','Honey-file deception','Honey-file alert','/api/honey-alert','Connected','09:44:03'],['M4','Threat intelligence','Threat context','/api/intelligence','Stubbed','09:43:40'],['M5','Automated response','Response contract','/api/response','Warning','09:43:58'],['M6','Dashboard','Analyst actions','/api/ack, /api/override','Connected','09:44:03']];
+const TESTS=[['M1 → M2','Telemetry contract','Pass','09:40:01'],['M2 → M6','Detection contract','Pass','09:40:02'],['M3 → M5','Honey-file alert','Pass','09:40:03'],['M4 → M6','Threat context','Stub response','09:40:04'],['M5 → M6','Response status','Pass (slow: 1.8 s)','09:40:05']];
+const ACT=[['09:41:16','Verification started','HOST-03','A-2041'],['09:41:15','Freeze','HOST-03 · PID 4127','A-2042'],['09:22:31','Thaw','HOST-01 · PID 1893','A-2039'],['09:22:30','Analyst override','A. Khan · false positive','A-2039'],['08:10:06','Isolation','HOST-02','A-2037']];
+const S={sel:'A-2041',ti:0,from:'dashboard',hf:null};
+const $=id=>document.getElementById(id),al=()=>A.find(a=>a.id===S.sel);
+const sevCls=s=>({Critical:'crit',High:'high',Medium:'med'}[s]);
+const sev=s=>`<span class="tag ${sevCls(s)}">${ic(s==='Medium'?'alert':'alert')}${s}</span>`;
+const stTag=a=>`<span class="tag ${a.resp==='Isolated'?'crit':a.resp==='Thawed'?'ok':'high'}">${a.resp}${a.resp==='Frozen'?' · '+a.ver.toLowerCase():''}</span>`;
+const repTag=r=>`<span class="tag ${{Malicious:'crit',Suspicious:'high',Clean:'ok',Unknown:'gr'}[r]}">${r}</span>`;
+const stat=(l,v,c='')=>`<div class="card stat ${c}"><small>${l}</small><b>${v}</b></div>`;
+const NAV=[['dashboard','Dashboard','dash'],['alert-detail','Alerts','bell'],['honey','Honey Files','file'],['intel','Threat Intelligence','globe'],['integrations','Integrations','plug']];
+const TITLES={dashboard:'Dashboard','alert-detail':'Alerts',shap:'Alerts',honey:'Honey Files',intel:'Threat Intelligence',action:'Alerts',integrations:'Integrations'};
+const GROUP={shap:'alert-detail',action:'alert-detail'};
+
+function go(n,from){if(from)S.from=from;render();const e=$('f-'+n);e&&e.scrollIntoView()}
+function pick(id,to){S.sel=id;go(to||'alert-detail')}
+function toast(m){toast.t&&clearTimeout(toast.t);$('toast').textContent=m;$('toast').classList.add('on');toast.t=setTimeout(()=>$('toast').classList.remove('on'),2600)}
+function modal(h,f){$('modal').innerHTML=h;$('ov').classList.add('on');(f||$('modal').querySelector('button'))?.focus()}
+function closeM(){$('ov').classList.remove('on')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});$('ov').addEventListener('click',e=>{if(e.target.id==='ov')closeM()});
+
+function ack(id){const a=A.find(x=>x.id===id);if(a.ack)return;a.ack=true;toast(a.id+' acknowledged by A. Khan');ACT.unshift([now(),'Analyst acknowledgement','A. Khan',a.id]);render()}
+const now=()=>new Date().toTimeString().slice(0,8);
+function askOverride(){const a=al();if(a.resp==='Thawed'||a.resp==='Isolated'){toast('Response for '+a.id+' is already final');return}
+ modal(`<h3 id="mt">Override automatic response?</h3><p class="mut">Continuing may allow the detected process (${a.proc}) on ${a.host} to resume. The current action, <b>${a.resp}</b>, will be replaced with <b>Thaw</b>. This is recorded against your account.</p><div class="acts"><button class="btn" onclick="closeM()">Cancel</button><button class="btn p" onclick="doOverride()">Confirm Override</button></div>`)}
+function doOverride(){const a=al(),r=($('why')||{}).value||'';a.resp='Thawed';a.ver='Analyst override';a.ack=true;closeM();ACT.unshift([now(),'Analyst override → Thaw',a.host+' · A. Khan',a.id]);toast('Override applied: '+a.host+' process thawed');render()}
+function killIso(){const a=al();if(a.resp!=='Frozen'){toast('No frozen process to act on');return}
+ modal(`<h3 id="mt">Confirm Kill and Isolate?</h3><p class="mut">Verification will be treated as confirmed. The process is killed and ${a.host} is isolated from the network.</p><div class="acts"><button class="btn" onclick="closeM()">Cancel</button><button class="btn p" onclick="confirmKill()">Confirm Kill / Isolate</button></div>`)}
+function confirmKill(){const a=al();a.resp='Isolated';a.ver='Confirmed';a.ack=true;closeM();ACT.unshift([now(),'Kill + Isolate',a.host+' · A. Khan',a.id]);toast(a.host+' isolated');render()}
+function runCheck(i){I[i][5]=now();if(I[i][0]==='M5')I[i][4]='Connected';toast(I[i][0]+' check complete: '+I[i][4]);render()}
+
+const openN=()=>A.filter(a=>!a.ack).length;
+function tbl(rows){return rows}
+const ORDER=[['dashboard','01 · Dashboard',rDash],['alert-detail','02 · Alert Detail',rDetail],['shap','03 · SHAP Explanation',rShap],['honey','04 · Honey-File Status',rHoney],['intel','05 · Threat Intelligence',rIntel],['action','06 · Action / Override',rAction],['integrations','07 · Integration Status',rInt]];
+function shell(k,label,body){const g=GROUP[k]||k,n=openN();
+ return `<div class="fwrap" id="f-${k}"><div class="flabel">${label}</div><div class="frame" data-screen="SCREEN-${label.replace(' · ','-').replace(/[ \/]+/g,'-')}">
+<aside aria-label="Primary"><div class="logo"><i>${ic('shield')}</i><div>AI-RDR<small>Ransomware Detection &amp; Response</small></div></div>
+<nav>${NAV.map(([x,l,i])=>`<button class="${g===x?'on':''}" ${g===x?'aria-current="page"':''} onclick="go('${x}')">${ic(i)}${l}</button>`).join('')}</nav>
+<div class="sb-foot"><div class="okl">${ic('check-circle')}All core services online</div><div class="who"><span class="av">AK</span><div>A. Khan<br><span class="mut">SOC Analyst</span></div></div></div></aside>
+<div class="main"><header><h1>${TITLES[k]}</h1><span class="env">Production  ·  Linux fleet</span>
+<label class="search">${ic('search')}<input aria-label="Search" placeholder="Search alerts, hosts, indicators" onkeydown="if(event.key==='Enter')toast('Search is not wired in this prototype')"></label>
+<button class="bell" aria-label="Notifications" onclick="go('dashboard')">${ic('bell')}${n?`<b>${n}</b>`:''}</button></header>
+<main><section class="screen" id="s-${k}">${body}</section></main></div></div></div>`}
+const BI={Critical:'alert',High:'alert',Medium:'alert',TRIGGERED:'alert',Malicious:'alert',Warning:'alert',Frozen:'pause',Isolated:'ban',Thawed:'check',Running:'check',Acknowledged:'check',Connected:'check',Clean:'check',Suspicious:'warn2',Unknown:'help',Protected:'globe',Open:'clock',Stubbed:'minus',Failed:'xc'};
+function tagIcons(){document.querySelectorAll('.tag').forEach(e=>{if(e.querySelector('svg'))return;const k=Object.keys(BI).find(x=>e.textContent.trim().startsWith(x));if(k)e.insertAdjacentHTML('afterbegin',ic(BI[k]))})}
+function tagFlows(){document.querySelectorAll('[onclick]').forEach(e=>{const m=/(go|pick)\('([^']+)'/.exec(e.getAttribute('onclick'));if(!m)return;const t=m[1]==='go'?m[2]:'alert-detail';e.setAttribute('data-flow-target',t);e.setAttribute('data-figma-name','Hotspot → '+t)})}
+function render(){const y=window.scrollY;$('stack').innerHTML=ORDER.map(([k,l,f])=>shell(k,l,f())).join('');tagFlows();tagIcons();window.scrollTo(0,y)}
+
+function head(t,sub,btns='',back){return`<div>${back?`<button class="back" onclick="go('${back[0]}')">${ic('back')}${back[1]}</button>`:''}</div><div class="ph"><div><h2>${t}</h2><p>${sub}</p></div><div class="sp">${btns}</div></div>`}
+
+function rDash(){const crit=A.filter(a=>a.sev==='Critical'&&a.resp!=='Thawed').length,act=A.filter(a=>a.resp==='Frozen').length;
+ return head('Dashboard','Monitoring active · last telemetry received 09:44:03','<span class="mut" style="padding-top:6px">Monitoring active</span>')+
+ `<div class="grid"><div class="c3">${stat('Active Alerts',act,'')}</div><div class="c3">${stat('Critical Alerts',crit,'crit')}</div><div class="c3">${stat('Honey Files',H.length+' · 2 triggered')}</div><div class="c3">${stat('Systems Monitored','6 of 6 hosts')}</div>
+ <div class="card c12"><h3>Live Alert Feed<span>Select an alert to investigate</span></h3><div class="tw"><table><thead><tr><th>Severity</th><th>Detection</th><th>Time</th><th>Host</th><th>Process / activity</th><th>State</th></tr></thead><tbody>${A.map(a=>`<tr class="row ${a.id===S.sel?'sel':''}" tabindex="0" onclick="pick('${a.id}')" onkeydown="if(event.key==='Enter')pick('${a.id}')"><td>${sev(a.sev)}</td><td>${a.type}<div class="mut mono">${a.id}</div></td><td class="mono">${a.ts}</td><td>${a.host}</td><td class="mono">${a.proc}</td><td>${stTag(a)}${a.ack?'':' <span class="tag gr">Open</span>'}</td></tr>`).join('')}</tbody></table></div></div>
+ <div class="card c6"><h3>Honey-File Status<span><a href="#" onclick="go('honey');return false" style="color:var(--primary-red-dark)">View all</a></span></h3><div class="pad"><dl><dt>Monitored hosts</dt><dd>6</dd><dt>Healthy files</dt><dd>4</dd><dt>Triggered files</dt><dd><b style="color:var(--primary-red)">2</b> (HOST-02, HOST-03)</dd><dt>Last activity</dt><dd class="mono">09:41:15 · HOST-03</dd><dt>Watcher (inotify)</dt><dd><span class="tag ok">Running</span></dd></dl></div></div>
+ <div class="card c6"><h3>Threat Intelligence Context<span>Enrichment only</span></h3><div class="tw"><table><thead><tr><th>Indicator</th><th>Type</th><th>Reputation</th><th>Checked</th></tr></thead><tbody>${T.slice(0,4).map((t,i)=>`<tr class="row" onclick="S.ti=${i};go('intel')"><td class="mono">${t.v}</td><td>${t.t}</td><td>${repTag(t.rep)}</td><td class="mono">${t.chk}</td></tr>`).join('')}</tbody></table></div></div>
+ <div class="card c12"><h3>Recent Response Activity</h3><div class="pad"><ul class="tl">${ACT.slice(0,6).map((r,i)=>`<li class="${i<1?'hot':''}"><time class="mono">${r[0]}</time><span><b>${r[1]}</b> <span class="mut">· ${r[2]} · ${r[3]}</span></span></li>`).join('')}</ul></div></div></div>`}
+
+function steps(a){const o=['Freeze','Verify','Kill / Isolate'];let c=a.resp==='Isolated'?3:a.resp==='Thawed'?-1:1;
+ return`<div class="steps">${o.map((s,i)=>`<span class="${c===-1?(i<2?'done':''):i<c?'done':i===c?'cur':''}">${s}</span>`).join('')}${a.resp==='Thawed'?'<span class="cur">Thaw</span>':''}</div>`}
+function rDetail(){const a=al(),m=a.ml,t=a.ts.slice(0,5);
+ const ev=m?[['write_rate','1,840 writes/s (baseline 42)'],['rename_ratio','0.61 of file operations'],['syscall_frequency','12.4k/s (auditd)'],['FIM','312 files modified in 9 s under /home/shared/']]:[['Trigger','Honey file opened / modified (inotify)'],['File',a.file],['Event','IN_MODIFY, IN_OPEN by PID 4127'],['Model stage','Bypassed (fast path)']];
+ const tl=m?[['09:41:12','Telemetry received'],['09:41:14','Behavioural anomaly detected'],['09:41:15','ML threshold exceeded'],['09:41:15','Process frozen'],['09:41:16','Verification started'],['pending','Isolation, if verification confirms']]:[[a.ts.slice(0,7)+'0','Honey-file event received (inotify)'],[a.ts,'Fast-path alert created'],[a.ts,'Process frozen'],[a.ts.slice(0,7)+'6','Verification started'],['pending','Isolation, if verification confirms']];
+ return head('Alert '+a.id,a.type+' · '+a.host,'',['dashboard','Dashboard'])+
+ `<div class="grid"><div class="card c8"><div class="sec"><dl><dt>Severity</dt><dd>${sev(a.sev)}</dd><dt>Detection method</dt><dd>${a.type}</dd><dt>Timestamp</dt><dd class="mono">2026-09-29 ${a.ts}</dd><dt>Affected host</dt><dd>${a.host}</dd><dt>Process</dt><dd class="mono">${a.proc}</dd><dt>Status</dt><dd><span class="tag ${a.ack?'ok':'gr'}">${a.ack?'Acknowledged':'Open'}</span></dd></dl></div>
+ <div class="sec"><h4>Detection summary</h4><p style="margin:0">${m?`Behavioural activity on ${a.host} exceeded the configured ransomware detection threshold. The process wrote and renamed files at a rate far above baseline.`:`A honey file on ${a.host} was accessed. Honey-file interaction is a high-confidence signal and was sent directly to response without ML scoring.`}</p></div>
+ <div class="sec"><h4>Evidence</h4><dl>${ev.map(e=>`<dt class="mono">${e[0]}</dt><dd class="mono">${e[1]}</dd>`).join('')}</dl></div>
+ <div class="sec"><h4>Timeline</h4><ul class="tl">${tl.map((r,i)=>`<li class="${r[0]==='pending'?'pend':i===3||i===2&&!m?'hot':''}"><time class="mono">${r[0]==='pending'?'—':r[0]}</time><span class="${r[0]==='pending'?'mut':''}">${r[1]}</span></li>`).join('')}</ul></div></div>
+ <div class="c4" style="display:flex;flex-direction:column;gap:16px"><div class="card"><h3>Response status</h3><div class="pad">${stTag(a)}<p class="mut" style="margin:10px 0">Workflow: Freeze → Verify → Kill/Isolate, or Thaw if false positive.</p>${steps(a)}</div></div>
+ <div class="card"><h3>Actions</h3><div class="pad acts"><button class="btn p" ${a.ack?'disabled':''} onclick="ack('${a.id}')">${ic('check')}${a.ack?'Acknowledged':'Acknowledge'}</button><button class="btn" onclick="${m?"go('shap')":"toast('SHAP applies to ML detections only')"}">${ic('chart')}View SHAP explanation</button><span style="flex-basis:100%;border-top:1px solid var(--border)"></span><button class="btn d" onclick="go('action')">Override response…</button></div></div></div></div>`}
+
+function rShap(){const a=al().ml?al():A[1];
+ const F=[['write_rate',.42],['rename_ratio',.27],['syscall_frequency',.21],['file_operation_rate',.15],['process_activity',.09],['user_session_age',-.06],['known_backup_process',-.11]];
+ const mx=.5;
+ return head('Detection Explanation','SHAP explanation for '+a.id+' · '+a.host,'',['alert-detail','Alert '+a.id])+
+ `<div class="grid"><div class="card c8"><h3>Feature contributions<span>SHAP value · impact on model output</span></h3><div class="pad">${F.map(([f,v])=>`<div class="bar"><span class="mono">${f}</span><div class="t"><span style="position:absolute;left:50%;top:-2px;bottom:-2px;border-left:1px solid #bbb"></span><i style="${v>0?'left:50%':'right:50%'};width:${Math.abs(v)/mx*50}%;background:${v>0?'var(--primary-red)':'#6B7280'}"></i></div><b class="mono">${v>0?'+':'−'}${Math.abs(v).toFixed(2)}</b></div>`).join('')}
+ <p class="mut" style="margin:14px 0 0;font-size:12px"><span class="lg"><i style="background:var(--primary-red)"></i>Increases likelihood</span><span class="lg"><i style="background:#6B7280"></i>Reduces likelihood</span></p></div>
+ <div class="sec" style="border-top:1px solid var(--border)"><h4>Explanation</h4>The alert was primarily influenced by unusually high file-write activity and elevated rename operations. Backup-process similarity slightly reduced confidence.</div></div>
+ <div class="c4" style="display:flex;flex-direction:column;gap:16px"><div class="card"><h3>Model output</h3><div class="stat"><small>Ransomware likelihood</small><b class="" style="color:var(--primary-red)">94%</b></div></div>
+ <div class="card"><h3>Details</h3><div class="pad"><dl style="grid-template-columns:100px 1fr"><dt>Model</dt><dd>XGBoost</dd><dt>Alert ID</dt><dd class="mono">${a.id}</dd><dt>Severity</dt><dd>${sev(a.sev)}</dd><dt>Explained at</dt><dd class="mono">09:41:15</dd><dt>Top feature</dt><dd class="mono">write_rate</dd></dl></div></div></div></div>`}
+
+function rHoney(){return head('Honey Files','Deception path · interaction is treated as a high-confidence alert')+
+ `<div class="grid"><div class="c3">${stat('Watcher','Running')}</div><div class="c3">${stat('Honey files',H.length)}</div><div class="c3">${stat('Triggered','2','crit')}</div><div class="c3">${stat('Last interaction','09:41:15')}</div>
+ <div class="card c8"><h3>Monitored honey files<span>inotify: active on 6 of 6 hosts</span></h3><div class="tw"><table><thead><tr><th>Host</th><th>Honey file</th><th>Location</th><th>Status</th><th>Last event</th><th>Action</th></tr></thead><tbody>${H.map((h,i)=>{const t=h[3]==='Triggered',al2=A.find(a=>!a.ml&&a.host===h[0]);return`<tr class="row ${S.hf===i?'sel':''}" onclick="S.hf=${i};render()"><td>${h[0]}</td><td class="mono">${h[1]}</td><td class="mono">${h[2]}</td><td>${t?'<span class="tag crit">'+ic('alert')+'TRIGGERED</span>':'<span class="tag ok">Protected</span>'}</td><td class="mono">${h[4]}</td><td>${t?`<button class="btn" onclick="event.stopPropagation();pick('${al2.id}')">Alert created</button>`:'—'}</td></tr>`}).join('')}</tbody></table></div></div>
+ <div class="card c4"><h3>Recent activity</h3><div class="pad"><ul class="tl"><li class="hot"><time class="mono">09:41:15</time><span>budget_report.docx modified on HOST-03</span></li><li><time class="mono">08:10:02</time><span>payroll_q3.xlsx opened on HOST-02</span></li><li><time class="mono">06:00:00</time><span class="mut">Integrity check passed, 6 hosts</span></li></ul>${S.hf!=null?`<div class="note">Selected: <b>${H[S.hf][1]}</b> on ${H[S.hf][0]}, ${H[S.hf][2]}</div>`:''}</div></div></div>`}
+
+function rIntel(){const t=T[S.ti];return head('Threat Intelligence','Enrichment context attached to alerts. Not used for the detection decision.')+
+ `<div class="grid"><div class="card c8"><h3>Indicators</h3><div class="tw"><table><thead><tr><th>Indicator</th><th>Type</th><th>Reputation</th><th>Source</th><th>Related alert</th><th>Checked</th></tr></thead><tbody>${T.map((x,i)=>`<tr class="row ${i===S.ti?'sel':''}" tabindex="0" onclick="S.ti=${i};render()" onkeydown="if(event.key==='Enter'){S.ti=${i};render()}"><td class="mono">${x.v}</td><td>${x.t}</td><td>${repTag(x.rep)}</td><td>${x.src}</td><td class="mono">${x.al}</td><td class="mono">${x.chk}</td></tr>`).join('')}</tbody></table></div></div>
+ <div class="card c4"><h3>Indicator detail</h3><div class="pad"><dl style="grid-template-columns:100px 1fr"><dt>Value</dt><dd class="mono" style="word-break:break-all">${t.v}</dd><dt>Type</dt><dd>${t.t}</dd><dt>Reputation</dt><dd>${repTag(t.rep)}</dd><dt>Source</dt><dd>${t.src}</dd><dt>Alert</dt><dd class="mono">${t.al}</dd></dl><div class="note" style="margin:14px 0">${t.n}</div><button class="btn" onclick="pick('${t.al}')">Open alert ${t.al}</button></div></div></div>`}
+
+function rAction(){const a=al(),fin=a.resp!=='Frozen';return head('Response Actions','Acknowledge or override the automatic response','',['alert-detail','Alert '+a.id])+
+ `<div class="grid"><div class="card c5"><h3>Alert summary</h3><div class="pad"><dl style="grid-template-columns:120px 1fr"><dt>Alert</dt><dd class="mono">${a.id}</dd><dt>Severity</dt><dd>${sev(a.sev)}</dd><dt>Host</dt><dd>${a.host}</dd><dt>Process</dt><dd class="mono">${a.proc}</dd><dt>Automatic action</dt><dd><b>${a.resp==='Frozen'?'Process frozen':a.resp}</b></dd><dt>Current state</dt><dd>${a.resp==='Frozen'?'Verification in progress':a.ver}</dd></dl><div style="margin-top:14px">${steps(a)}</div></div></div>
+ <div class="c7" style="display:flex;flex-direction:column;gap:16px"><div class="opt"><b>Acknowledge</b><span class="mut">Confirms you have seen this alert. The automatic response continues unchanged.</span><div><button class="btn p" ${a.ack?'disabled':''} onclick="ack('${a.id}')">${a.ack?'Acknowledged':'Acknowledge alert'}</button></div></div>
+ <div class="opt dz"><b>Override automatic response</b><dl style="grid-template-columns:130px 1fr"><dt>Current action</dt><dd>${a.resp}</dd><dt>Proposed action</dt><dd>Thaw (release process, treat as false positive)</dd></dl><label for="why" class="mut">Reason (required)</label><textarea id="why" placeholder="e.g. Scheduled backup job, verified with host owner"></textarea><label class="mut"><input type="checkbox" id="cf" onchange="$('ob').disabled=!this.checked||$('why').value.length<3||${fin}"> I confirm I am authorised to override this response.</label><div class="acts"><button class="btn d" id="ob" disabled onclick="askOverride()">Override…</button><span class="sep"></span><button class="btn" ${fin?'disabled':''} onclick="killIso()">Confirm Kill / Isolate</button></div>${fin?'<span class="mut">Response is final for this alert.</span>':''}</div></div></div>`}
+
+function rInt(){return head('Integration Status','Interface contracts between modules','<button class="btn" onclick="I.forEach((_,i)=>I[i][5]=now());toast(\'All contract checks complete\');render()">Run all checks</button>')+
+ `<div class="grid"><div class="card c12"><h3>Components</h3><div class="tw"><table><thead><tr><th>Component</th><th>Interface</th><th>Endpoint</th><th>Status</th><th>Last check</th><th></th></tr></thead><tbody>${I.map((r,i)=>`<tr><td><b>${r[0]}</b> <span class="mut">${r[1]}</span></td><td>${r[2]}</td><td class="mono">${r[3]}</td><td><span class="tag ${{Connected:'ok',Stubbed:'info',Warning:'high',Failed:'crit'}[r[4]]}">${r[4]}</span></td><td class="mono">${r[5]}</td><td><button class="btn" onclick="runCheck(${i})">Check</button></td></tr>`).join('')}</tbody></table></div></div>
+ <div class="card c12"><h3>Integration test<span>Last run 09:40</span></h3><div class="tw"><table><tbody>${TESTS.map(t=>`<tr><td><b>${t[0]}</b></td><td>${t[1]}</td><td>${t[2]}</td><td class="mono mut">${t[3]}</td></tr>`).join('')}</tbody></table></div></div></div>`}
+
+render();
+</script>
+</body>
+</html>

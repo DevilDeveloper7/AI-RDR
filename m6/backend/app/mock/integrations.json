@@ -1,0 +1,82 @@
+{
+ "meta": {
+  "is_mock": true,
+  "note": "Endpoints are PROVISIONAL / M6 STUB proposals, not confirmed by module owners."
+ },
+ "components": [
+  {
+   "module": "M1",
+   "name": "Monitoring / telemetry",
+   "interface": "Telemetry contract",
+   "endpoint": "/api/events",
+   "last_check": "2026-09-29T09:44:02Z"
+  },
+  {
+   "module": "M2",
+   "name": "Behavioural ML detection",
+   "interface": "Detection contract",
+   "endpoint": "/api/alerts",
+   "last_check": "2026-09-29T09:44:02Z"
+  },
+  {
+   "module": "M3",
+   "name": "Honey-file deception",
+   "interface": "Honey-file alert",
+   "endpoint": "/api/honey-alert",
+   "last_check": "2026-09-29T09:44:03Z"
+  },
+  {
+   "module": "M4",
+   "name": "Threat intelligence",
+   "interface": "Threat context",
+   "endpoint": "/api/intelligence",
+   "last_check": "2026-09-29T09:43:40Z"
+  },
+  {
+   "module": "M5",
+   "name": "Automated response",
+   "interface": "Response contract",
+   "endpoint": "/api/response",
+   "last_check": "2026-09-29T09:43:58Z"
+  },
+  {
+   "module": "M6",
+   "name": "Dashboard",
+   "interface": "Analyst actions",
+   "endpoint": "/api/v1/*",
+   "last_check": "2026-09-29T09:44:03Z"
+  }
+ ],
+ "recent_tests": [
+  {
+   "path": "M1 → M2",
+   "contract": "Telemetry contract",
+   "result": "Stub response",
+   "timestamp": "2026-09-29T09:40:01Z"
+  },
+  {
+   "path": "M2 → M6",
+   "contract": "Detection contract",
+   "result": "Stub response",
+   "timestamp": "2026-09-29T09:40:02Z"
+  },
+  {
+   "path": "M3 → M5",
+   "contract": "Honey-file alert",
+   "result": "Stub response",
+   "timestamp": "2026-09-29T09:40:03Z"
+  },
+  {
+   "path": "M4 → M6",
+   "contract": "Threat context",
+   "result": "Stub response",
+   "timestamp": "2026-09-29T09:40:04Z"
+  },
+  {
+   "path": "M5 → M6",
+   "contract": "Response status",
+   "result": "Stub response",
+   "timestamp": "2026-09-29T09:40:05Z"
+  }
+ ]
+}

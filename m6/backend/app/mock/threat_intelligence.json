@@ -1,0 +1,68 @@
+{
+ "meta": {
+  "is_mock": true,
+  "note": "MOCK enrichment. Provider not finalised."
+ },
+ "items": [
+  {
+   "indicator": "9f2cc3d6f7864d23c4d75cb404558a81d69369e303cbe12c4fbdf337e41a",
+   "type": "SHA-256",
+   "reputation": "Malicious",
+   "source": "Threat feed (M4)",
+   "related_alert": "A-2041",
+   "last_checked": "2026-09-29T09:41:17Z",
+   "notes": "Hash of enc_worker.py observed on HOST-03. Matches a known ransomware family sample. Context only; the detection decision was made by M2.",
+   "enrichment_status": "enriched"
+  },
+  {
+   "indicator": "185.220.101.47",
+   "type": "IP address",
+   "reputation": "Suspicious",
+   "source": "Threat feed (M4)",
+   "related_alert": "A-2041",
+   "last_checked": "2026-09-29T09:41:17Z",
+   "notes": "Outbound connection attempt from HOST-03 shortly before detection. Listed on a public abuse feed.",
+   "enrichment_status": "enriched"
+  },
+  {
+   "indicator": "update-cdn-sync.net",
+   "type": "Domain",
+   "reputation": "Suspicious",
+   "source": "Threat feed (M4)",
+   "related_alert": "A-2042",
+   "last_checked": "2026-09-29T09:41:18Z",
+   "notes": "Domain resolved by the frozen process. Recently registered; low-confidence reputation.",
+   "enrichment_status": "enriched"
+  },
+  {
+   "indicator": "3ab829c44a2d514e3859c1c4da7c8471d0dfd46600539e9596d20b6277d0",
+   "type": "SHA-256",
+   "reputation": "Unknown",
+   "source": "Threat feed (M4)",
+   "related_alert": "A-2038",
+   "last_checked": "2026-09-29T08:57:44Z",
+   "notes": "No reputation data returned for this hash.",
+   "enrichment_status": "no_data"
+  },
+  {
+   "indicator": "10.20.4.15",
+   "type": "IP address",
+   "reputation": "Clean",
+   "source": "Internal allowlist",
+   "related_alert": "A-2039",
+   "last_checked": "2026-09-29T09:22:11Z",
+   "notes": "Internal backup server. Supports the false-positive outcome for A-2039.",
+   "enrichment_status": "enriched"
+  },
+  {
+   "indicator": "c41e33af5fbac8a06def3a04603c2c63a33708026d5cc2812d328f8a0b92",
+   "type": "SHA-256",
+   "reputation": "Malicious",
+   "source": "Threat feed (M4)",
+   "related_alert": "A-2037",
+   "last_checked": "2026-09-29T08:10:05Z",
+   "notes": "Hash of the process that opened payroll_q3.xlsx on HOST-02.",
+   "enrichment_status": "enriched"
+  }
+ ]
+}

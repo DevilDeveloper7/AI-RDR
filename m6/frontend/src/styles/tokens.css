@@ -1,0 +1,28 @@
+/* Design tokens. Light is the default; the Profile page switches [data-theme="dark"] on <html>. */
+:root{
+  --primary-red:#C81E1E;--primary-red-dark:#9F1717;--primary-red-light:#FCE8E8;
+  --background:#F7F7F8;--surface:#fff;--surface-secondary:#F2F2F4;
+  --text-primary:#171717;--text-secondary:#6B7280;
+  --border:#E4E4E7;--hair:#F0F0F2;
+  --success:#15803D;--warning:#B45309;--danger:#C81E1E;
+  --glow:rgba(200,30,30,.07);--glow-strong:rgba(200,30,30,.13);
+  --row-hover:#FDF1F1;--danger-border:#F1B5B5;--danger-surface:#FFF9F9;
+  --nav-bg:linear-gradient(180deg,#fff 0%,#FFF5F5 100%);
+  --success-soft:#E3F4E8;
+  --font:'Inter Variable',Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --r:8px;--r-card:24px;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --primary-red-light:#3B1A1C;--primary-red-dark:#F07575;
+  --background:#0F1012;--surface:#17181B;--surface-secondary:#202126;
+  --text-primary:#F3F3F4;--text-secondary:#9AA0AB;
+  --border:#2C2D33;--hair:#26272C;
+  --success:#4ADE80;--warning:#F59E0B;
+  --glow:rgba(240,90,90,.10);--glow-strong:rgba(240,90,90,.20);
+  --row-hover:#241A1C;--danger-border:#6B2A2C;--danger-surface:#1E1517;
+  --nav-bg:linear-gradient(180deg,#1B1C20 0%,#201719 100%);
+  --success-soft:#14301F;
+  color-scheme:dark;
+}

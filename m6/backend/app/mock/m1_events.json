@@ -1,0 +1,2648 @@
+{
+ "meta": {
+  "is_mock": true,
+  "note": "MOCK DATA. Not produced by a real module."
+ },
+ "events": [
+  {
+   "event_id": "EVT-1963-1",
+   "timestamp": "2026-09-27T22:21:33Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1963-2",
+   "timestamp": "2026-09-27T22:21:34Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1963-3",
+   "timestamp": "2026-09-27T22:21:35Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1964-1",
+   "timestamp": "2026-09-27T22:58:07Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "write_rate": "340 writes/s (baseline 42)",
+    "rename_ratio": "0.12 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1964-2",
+   "timestamp": "2026-09-27T22:58:08Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "syscall_frequency": "4.7k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1964-3",
+   "timestamp": "2026-09-27T22:58:09Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "FIM": "48 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1965-1",
+   "timestamp": "2026-09-27T23:36:38Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "write_rate": "380 writes/s (baseline 42)",
+    "rename_ratio": "0.13 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1965-2",
+   "timestamp": "2026-09-27T23:36:39Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "syscall_frequency": "5.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1965-3",
+   "timestamp": "2026-09-27T23:36:40Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "FIM": "54 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1966-1",
+   "timestamp": "2026-09-28T00:12:16Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "write_rate": "420 writes/s (baseline 42)",
+    "rename_ratio": "0.14 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1966-2",
+   "timestamp": "2026-09-28T00:12:17Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "syscall_frequency": "5.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1966-3",
+   "timestamp": "2026-09-28T00:12:18Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "FIM": "60 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1967-1",
+   "timestamp": "2026-09-28T00:44:50Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "write_rate": "180 writes/s (baseline 42)",
+    "rename_ratio": "0.08 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1967-2",
+   "timestamp": "2026-09-28T00:44:51Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "syscall_frequency": "3.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1967-3",
+   "timestamp": "2026-09-28T00:44:52Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "FIM": "24 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1968-1",
+   "timestamp": "2026-09-28T01:30:05Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "write_rate": "1,030 writes/s (baseline 42)",
+    "rename_ratio": "0.38 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1968-2",
+   "timestamp": "2026-09-28T01:30:06Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "syscall_frequency": "8.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1968-3",
+   "timestamp": "2026-09-28T01:30:07Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "FIM": "155 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1969-1",
+   "timestamp": "2026-09-28T01:58:31Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "write_rate": "260 writes/s (baseline 42)",
+    "rename_ratio": "0.10 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1969-2",
+   "timestamp": "2026-09-28T01:58:32Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "syscall_frequency": "3.9k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1969-3",
+   "timestamp": "2026-09-28T01:58:33Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "FIM": "36 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1970-1",
+   "timestamp": "2026-09-28T02:22:08Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1970-2",
+   "timestamp": "2026-09-28T02:22:09Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1970-3",
+   "timestamp": "2026-09-28T02:22:10Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1971-1",
+   "timestamp": "2026-09-28T02:47:24Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "write_rate": "340 writes/s (baseline 42)",
+    "rename_ratio": "0.12 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1971-2",
+   "timestamp": "2026-09-28T02:47:25Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "syscall_frequency": "4.7k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1971-3",
+   "timestamp": "2026-09-28T02:47:26Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "FIM": "48 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1972-1",
+   "timestamp": "2026-09-28T03:15:42Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "write_rate": "380 writes/s (baseline 42)",
+    "rename_ratio": "0.13 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1972-2",
+   "timestamp": "2026-09-28T03:15:43Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "syscall_frequency": "5.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1972-3",
+   "timestamp": "2026-09-28T03:15:44Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "FIM": "54 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1973-1",
+   "timestamp": "2026-09-28T03:41:01Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "write_rate": "420 writes/s (baseline 42)",
+    "rename_ratio": "0.14 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1973-2",
+   "timestamp": "2026-09-28T03:41:02Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "syscall_frequency": "5.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1973-3",
+   "timestamp": "2026-09-28T03:41:03Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "FIM": "60 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1974-1",
+   "timestamp": "2026-09-28T03:58:18Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "write_rate": "900 writes/s (baseline 42)",
+    "rename_ratio": "0.35 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1974-2",
+   "timestamp": "2026-09-28T03:58:19Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "syscall_frequency": "8.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1974-3",
+   "timestamp": "2026-09-28T03:58:20Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "FIM": "140 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1975-1",
+   "timestamp": "2026-09-28T04:31:07Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "write_rate": "220 writes/s (baseline 42)",
+    "rename_ratio": "0.09 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1975-2",
+   "timestamp": "2026-09-28T04:31:08Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "syscall_frequency": "3.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1975-3",
+   "timestamp": "2026-09-28T04:31:09Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "FIM": "30 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1976-1",
+   "timestamp": "2026-09-28T04:52:29Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "write_rate": "1,160 writes/s (baseline 42)",
+    "rename_ratio": "0.41 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1976-2",
+   "timestamp": "2026-09-28T04:52:30Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "syscall_frequency": "9.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1976-3",
+   "timestamp": "2026-09-28T04:52:31Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "FIM": "170 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1977-1",
+   "timestamp": "2026-09-28T05:10:01Z",
+   "source": "auditd",
+   "event_type": "process.file_access",
+   "host": "HOST-02",
+   "details": {
+    "process": "python3 (PID 9310)",
+    "file": "/home/shared/decoy.docx",
+    "syscall": "openat"
+   }
+  },
+  {
+   "event_id": "EVT-1977-2",
+   "timestamp": "2026-09-28T05:10:02Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.file_modified",
+   "host": "HOST-02",
+   "details": {
+    "process": "python3 (PID 9310)",
+    "file": "/home/shared/decoy.docx",
+    "event": "IN_MODIFY"
+   }
+  },
+  {
+   "event_id": "EVT-1978-1",
+   "timestamp": "2026-09-28T05:57:38Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "write_rate": "1,420 writes/s (baseline 42)",
+    "rename_ratio": "0.47 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1978-2",
+   "timestamp": "2026-09-28T05:57:39Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "syscall_frequency": "10.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1978-3",
+   "timestamp": "2026-09-28T05:57:40Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "FIM": "200 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1979-1",
+   "timestamp": "2026-09-28T06:22:06Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "write_rate": "380 writes/s (baseline 42)",
+    "rename_ratio": "0.13 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1979-2",
+   "timestamp": "2026-09-28T06:22:07Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "syscall_frequency": "5.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1979-3",
+   "timestamp": "2026-09-28T06:22:08Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "FIM": "54 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1980-1",
+   "timestamp": "2026-09-28T06:33:50Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "write_rate": "420 writes/s (baseline 42)",
+    "rename_ratio": "0.14 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1980-2",
+   "timestamp": "2026-09-28T06:33:51Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "syscall_frequency": "5.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1980-3",
+   "timestamp": "2026-09-28T06:33:52Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "FIM": "60 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1981-1",
+   "timestamp": "2026-09-28T06:41:12Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "write_rate": "900 writes/s (baseline 42)",
+    "rename_ratio": "0.35 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1981-2",
+   "timestamp": "2026-09-28T06:41:13Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "syscall_frequency": "8.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1982-1",
+   "timestamp": "2026-09-28T06:41:14Z",
+   "source": "auditd",
+   "event_type": "process.file_access",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "file": "/home/shared/decoy.docx",
+    "syscall": "openat"
+   }
+  },
+  {
+   "event_id": "EVT-1981-3",
+   "timestamp": "2026-09-28T06:41:14Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "FIM": "140 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1982-2",
+   "timestamp": "2026-09-28T06:41:15Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.file_modified",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "file": "/home/shared/decoy.docx",
+    "event": "IN_MODIFY"
+   }
+  },
+  {
+   "event_id": "EVT-1983-1",
+   "timestamp": "2026-09-28T07:21:33Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "write_rate": "260 writes/s (baseline 42)",
+    "rename_ratio": "0.10 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1983-2",
+   "timestamp": "2026-09-28T07:21:34Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "syscall_frequency": "3.9k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1983-3",
+   "timestamp": "2026-09-28T07:21:35Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "FIM": "36 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1984-1",
+   "timestamp": "2026-09-28T07:58:07Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1984-2",
+   "timestamp": "2026-09-28T07:58:08Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1984-3",
+   "timestamp": "2026-09-28T07:58:09Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1985-1",
+   "timestamp": "2026-09-28T08:36:38Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "write_rate": "340 writes/s (baseline 42)",
+    "rename_ratio": "0.12 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1985-2",
+   "timestamp": "2026-09-28T08:36:39Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "syscall_frequency": "4.7k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1985-3",
+   "timestamp": "2026-09-28T08:36:40Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "FIM": "48 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1986-1",
+   "timestamp": "2026-09-28T09:12:16Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "write_rate": "380 writes/s (baseline 42)",
+    "rename_ratio": "0.13 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1986-2",
+   "timestamp": "2026-09-28T09:12:17Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "syscall_frequency": "5.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1986-3",
+   "timestamp": "2026-09-28T09:12:18Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "FIM": "54 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1987-1",
+   "timestamp": "2026-09-28T09:44:50Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "write_rate": "420 writes/s (baseline 42)",
+    "rename_ratio": "0.14 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1987-2",
+   "timestamp": "2026-09-28T09:44:51Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "syscall_frequency": "5.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1987-3",
+   "timestamp": "2026-09-28T09:44:52Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "FIM": "60 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1988-1",
+   "timestamp": "2026-09-28T10:30:05Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "write_rate": "900 writes/s (baseline 42)",
+    "rename_ratio": "0.35 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1988-2",
+   "timestamp": "2026-09-28T10:30:06Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "syscall_frequency": "8.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1988-3",
+   "timestamp": "2026-09-28T10:30:07Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "FIM": "140 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1989-1",
+   "timestamp": "2026-09-28T10:58:31Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "write_rate": "220 writes/s (baseline 42)",
+    "rename_ratio": "0.09 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1989-2",
+   "timestamp": "2026-09-28T10:58:32Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "syscall_frequency": "3.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1989-3",
+   "timestamp": "2026-09-28T10:58:33Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "FIM": "30 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1990-1",
+   "timestamp": "2026-09-28T11:22:08Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "write_rate": "260 writes/s (baseline 42)",
+    "rename_ratio": "0.10 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1990-2",
+   "timestamp": "2026-09-28T11:22:09Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "syscall_frequency": "3.9k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1990-3",
+   "timestamp": "2026-09-28T11:22:10Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "FIM": "36 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1991-1",
+   "timestamp": "2026-09-28T11:47:24Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1991-2",
+   "timestamp": "2026-09-28T11:47:25Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1991-3",
+   "timestamp": "2026-09-28T11:47:26Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1992-1",
+   "timestamp": "2026-09-28T12:15:42Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "write_rate": "340 writes/s (baseline 42)",
+    "rename_ratio": "0.12 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1992-2",
+   "timestamp": "2026-09-28T12:15:43Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "syscall_frequency": "4.7k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1992-3",
+   "timestamp": "2026-09-28T12:15:44Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "FIM": "48 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1993-1",
+   "timestamp": "2026-09-28T12:41:01Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "write_rate": "380 writes/s (baseline 42)",
+    "rename_ratio": "0.13 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1993-2",
+   "timestamp": "2026-09-28T12:41:02Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "syscall_frequency": "5.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1993-3",
+   "timestamp": "2026-09-28T12:41:03Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "FIM": "54 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1994-1",
+   "timestamp": "2026-09-28T12:58:18Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "write_rate": "1,680 writes/s (baseline 42)",
+    "rename_ratio": "0.53 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1994-2",
+   "timestamp": "2026-09-28T12:58:19Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "syscall_frequency": "11.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1994-3",
+   "timestamp": "2026-09-28T12:58:20Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "FIM": "230 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1995-1",
+   "timestamp": "2026-09-28T13:31:07Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "write_rate": "180 writes/s (baseline 42)",
+    "rename_ratio": "0.08 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1995-2",
+   "timestamp": "2026-09-28T13:31:08Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "syscall_frequency": "3.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1995-3",
+   "timestamp": "2026-09-28T13:31:09Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "FIM": "24 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1996-1",
+   "timestamp": "2026-09-28T13:52:29Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "write_rate": "1,030 writes/s (baseline 42)",
+    "rename_ratio": "0.38 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1996-2",
+   "timestamp": "2026-09-28T13:52:30Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "syscall_frequency": "8.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1996-3",
+   "timestamp": "2026-09-28T13:52:31Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "FIM": "155 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1997-1",
+   "timestamp": "2026-09-28T14:10:01Z",
+   "source": "auditd",
+   "event_type": "process.file_access",
+   "host": "HOST-02",
+   "details": {
+    "process": "python3 (PID 9310)",
+    "file": "/home/shared/decoy.docx",
+    "syscall": "openat"
+   }
+  },
+  {
+   "event_id": "EVT-1997-2",
+   "timestamp": "2026-09-28T14:10:02Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.file_modified",
+   "host": "HOST-02",
+   "details": {
+    "process": "python3 (PID 9310)",
+    "file": "/home/shared/decoy.docx",
+    "event": "IN_MODIFY"
+   }
+  },
+  {
+   "event_id": "EVT-1998-1",
+   "timestamp": "2026-09-28T14:57:38Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "write_rate": "1,290 writes/s (baseline 42)",
+    "rename_ratio": "0.44 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1998-2",
+   "timestamp": "2026-09-28T14:57:39Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "syscall_frequency": "9.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1998-3",
+   "timestamp": "2026-09-28T14:57:40Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "FIM": "185 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-1999-1",
+   "timestamp": "2026-09-28T15:22:06Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "write_rate": "340 writes/s (baseline 42)",
+    "rename_ratio": "0.12 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-1999-2",
+   "timestamp": "2026-09-28T15:22:07Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "syscall_frequency": "4.7k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-1999-3",
+   "timestamp": "2026-09-28T15:22:08Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "FIM": "48 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2000-1",
+   "timestamp": "2026-09-28T15:33:50Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "write_rate": "380 writes/s (baseline 42)",
+    "rename_ratio": "0.13 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2000-2",
+   "timestamp": "2026-09-28T15:33:51Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "syscall_frequency": "5.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2000-3",
+   "timestamp": "2026-09-28T15:33:52Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "FIM": "54 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2001-1",
+   "timestamp": "2026-09-28T15:41:12Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "write_rate": "1,680 writes/s (baseline 42)",
+    "rename_ratio": "0.53 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2001-2",
+   "timestamp": "2026-09-28T15:41:13Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "syscall_frequency": "11.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2002-1",
+   "timestamp": "2026-09-28T15:41:14Z",
+   "source": "auditd",
+   "event_type": "process.file_access",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "file": "/home/shared/decoy.docx",
+    "syscall": "openat"
+   }
+  },
+  {
+   "event_id": "EVT-2001-3",
+   "timestamp": "2026-09-28T15:41:14Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "FIM": "230 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2002-2",
+   "timestamp": "2026-09-28T15:41:15Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.file_modified",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "file": "/home/shared/decoy.docx",
+    "event": "IN_MODIFY"
+   }
+  },
+  {
+   "event_id": "EVT-2003-1",
+   "timestamp": "2026-09-28T16:21:33Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "write_rate": "220 writes/s (baseline 42)",
+    "rename_ratio": "0.09 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2003-2",
+   "timestamp": "2026-09-28T16:21:34Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "syscall_frequency": "3.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2003-3",
+   "timestamp": "2026-09-28T16:21:35Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "FIM": "30 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2004-1",
+   "timestamp": "2026-09-28T16:58:07Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "write_rate": "260 writes/s (baseline 42)",
+    "rename_ratio": "0.10 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2004-2",
+   "timestamp": "2026-09-28T16:58:08Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "syscall_frequency": "3.9k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2004-3",
+   "timestamp": "2026-09-28T16:58:09Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "FIM": "36 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2005-1",
+   "timestamp": "2026-09-28T17:36:38Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2005-2",
+   "timestamp": "2026-09-28T17:36:39Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2005-3",
+   "timestamp": "2026-09-28T17:36:40Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2006-1",
+   "timestamp": "2026-09-28T18:12:16Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "write_rate": "340 writes/s (baseline 42)",
+    "rename_ratio": "0.12 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2006-2",
+   "timestamp": "2026-09-28T18:12:17Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "syscall_frequency": "4.7k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2006-3",
+   "timestamp": "2026-09-28T18:12:18Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "FIM": "48 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2007-1",
+   "timestamp": "2026-09-28T18:44:50Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "write_rate": "380 writes/s (baseline 42)",
+    "rename_ratio": "0.13 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2007-2",
+   "timestamp": "2026-09-28T18:44:51Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "syscall_frequency": "5.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2007-3",
+   "timestamp": "2026-09-28T18:44:52Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "FIM": "54 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2008-1",
+   "timestamp": "2026-09-28T19:30:05Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "write_rate": "1,680 writes/s (baseline 42)",
+    "rename_ratio": "0.53 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2008-2",
+   "timestamp": "2026-09-28T19:30:06Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "syscall_frequency": "11.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2008-3",
+   "timestamp": "2026-09-28T19:30:07Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "FIM": "230 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2009-1",
+   "timestamp": "2026-09-28T19:58:31Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "write_rate": "180 writes/s (baseline 42)",
+    "rename_ratio": "0.08 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2009-2",
+   "timestamp": "2026-09-28T19:58:32Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "syscall_frequency": "3.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2009-3",
+   "timestamp": "2026-09-28T19:58:33Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "FIM": "24 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2010-1",
+   "timestamp": "2026-09-28T20:22:08Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "write_rate": "220 writes/s (baseline 42)",
+    "rename_ratio": "0.09 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2010-2",
+   "timestamp": "2026-09-28T20:22:09Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "syscall_frequency": "3.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2010-3",
+   "timestamp": "2026-09-28T20:22:10Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "FIM": "30 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2011-1",
+   "timestamp": "2026-09-28T20:47:24Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "write_rate": "260 writes/s (baseline 42)",
+    "rename_ratio": "0.10 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2011-2",
+   "timestamp": "2026-09-28T20:47:25Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "syscall_frequency": "3.9k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2011-3",
+   "timestamp": "2026-09-28T20:47:26Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "FIM": "36 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2012-1",
+   "timestamp": "2026-09-28T21:15:42Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2012-2",
+   "timestamp": "2026-09-28T21:15:43Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2012-3",
+   "timestamp": "2026-09-28T21:15:44Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2013-1",
+   "timestamp": "2026-09-28T21:41:01Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "write_rate": "340 writes/s (baseline 42)",
+    "rename_ratio": "0.12 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2013-2",
+   "timestamp": "2026-09-28T21:41:02Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "syscall_frequency": "4.7k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2013-3",
+   "timestamp": "2026-09-28T21:41:03Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "FIM": "48 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2014-1",
+   "timestamp": "2026-09-28T21:58:18Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "write_rate": "1,550 writes/s (baseline 42)",
+    "rename_ratio": "0.50 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2014-2",
+   "timestamp": "2026-09-28T21:58:19Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "syscall_frequency": "10.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2014-3",
+   "timestamp": "2026-09-28T21:58:20Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "FIM": "215 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2015-1",
+   "timestamp": "2026-09-28T22:31:07Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "write_rate": "420 writes/s (baseline 42)",
+    "rename_ratio": "0.14 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2015-2",
+   "timestamp": "2026-09-28T22:31:08Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "syscall_frequency": "5.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2015-3",
+   "timestamp": "2026-09-28T22:31:09Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "FIM": "60 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2016-1",
+   "timestamp": "2026-09-28T22:52:29Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "write_rate": "900 writes/s (baseline 42)",
+    "rename_ratio": "0.35 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2016-2",
+   "timestamp": "2026-09-28T22:52:30Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "syscall_frequency": "8.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2016-3",
+   "timestamp": "2026-09-28T22:52:31Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "FIM": "140 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2017-1",
+   "timestamp": "2026-09-28T23:10:01Z",
+   "source": "auditd",
+   "event_type": "process.file_access",
+   "host": "HOST-02",
+   "details": {
+    "process": "python3 (PID 9310)",
+    "file": "/home/shared/decoy.docx",
+    "syscall": "openat"
+   }
+  },
+  {
+   "event_id": "EVT-2017-2",
+   "timestamp": "2026-09-28T23:10:02Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.file_modified",
+   "host": "HOST-02",
+   "details": {
+    "process": "python3 (PID 9310)",
+    "file": "/home/shared/decoy.docx",
+    "event": "IN_MODIFY"
+   }
+  },
+  {
+   "event_id": "EVT-2018-1",
+   "timestamp": "2026-09-28T23:57:38Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "write_rate": "1,160 writes/s (baseline 42)",
+    "rename_ratio": "0.41 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2018-2",
+   "timestamp": "2026-09-28T23:57:39Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "syscall_frequency": "9.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2018-3",
+   "timestamp": "2026-09-28T23:57:40Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "FIM": "170 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2019-1",
+   "timestamp": "2026-09-29T00:22:06Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2019-2",
+   "timestamp": "2026-09-29T00:22:07Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2019-3",
+   "timestamp": "2026-09-29T00:22:08Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2020-1",
+   "timestamp": "2026-09-29T00:33:50Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "write_rate": "340 writes/s (baseline 42)",
+    "rename_ratio": "0.12 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2020-2",
+   "timestamp": "2026-09-29T00:33:51Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "syscall_frequency": "4.7k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2020-3",
+   "timestamp": "2026-09-29T00:33:52Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "FIM": "48 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2021-1",
+   "timestamp": "2026-09-29T00:41:12Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "write_rate": "1,550 writes/s (baseline 42)",
+    "rename_ratio": "0.50 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2021-2",
+   "timestamp": "2026-09-29T00:41:13Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "syscall_frequency": "10.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2022-1",
+   "timestamp": "2026-09-29T00:41:14Z",
+   "source": "auditd",
+   "event_type": "process.file_access",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "file": "/home/shared/decoy.docx",
+    "syscall": "openat"
+   }
+  },
+  {
+   "event_id": "EVT-2021-3",
+   "timestamp": "2026-09-29T00:41:14Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "FIM": "215 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2022-2",
+   "timestamp": "2026-09-29T00:41:15Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.file_modified",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "file": "/home/shared/decoy.docx",
+    "event": "IN_MODIFY"
+   }
+  },
+  {
+   "event_id": "EVT-2023-1",
+   "timestamp": "2026-09-29T01:21:33Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "write_rate": "180 writes/s (baseline 42)",
+    "rename_ratio": "0.08 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2023-2",
+   "timestamp": "2026-09-29T01:21:34Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "syscall_frequency": "3.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2023-3",
+   "timestamp": "2026-09-29T01:21:35Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "mysqldump (PID 3344)",
+    "FIM": "24 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2024-1",
+   "timestamp": "2026-09-29T01:58:07Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "write_rate": "220 writes/s (baseline 42)",
+    "rename_ratio": "0.09 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2024-2",
+   "timestamp": "2026-09-29T01:58:08Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "syscall_frequency": "3.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2024-3",
+   "timestamp": "2026-09-29T01:58:09Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "gpg (PID 12406)",
+    "FIM": "30 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2025-1",
+   "timestamp": "2026-09-29T02:36:38Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "write_rate": "260 writes/s (baseline 42)",
+    "rename_ratio": "0.10 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2025-2",
+   "timestamp": "2026-09-29T02:36:39Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "syscall_frequency": "3.9k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2025-3",
+   "timestamp": "2026-09-29T02:36:40Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "rsync (PID 1902)",
+    "FIM": "36 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2026-1",
+   "timestamp": "2026-09-29T03:12:16Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2026-2",
+   "timestamp": "2026-09-29T03:12:17Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2026-3",
+   "timestamp": "2026-09-29T03:12:18Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-08",
+   "details": {
+    "process": "cp (PID 6019)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2027-1",
+   "timestamp": "2026-09-29T03:44:50Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "write_rate": "340 writes/s (baseline 42)",
+    "rename_ratio": "0.12 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2027-2",
+   "timestamp": "2026-09-29T03:44:51Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "syscall_frequency": "4.7k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2027-3",
+   "timestamp": "2026-09-29T03:44:52Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-02",
+   "details": {
+    "process": "duplicity (PID 7741)",
+    "FIM": "48 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2028-1",
+   "timestamp": "2026-09-29T04:30:05Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "write_rate": "1,550 writes/s (baseline 42)",
+    "rename_ratio": "0.50 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2028-2",
+   "timestamp": "2026-09-29T04:30:06Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "syscall_frequency": "10.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2028-3",
+   "timestamp": "2026-09-29T04:30:07Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-07",
+   "details": {
+    "process": "encrypt.sh (PID 9902)",
+    "FIM": "215 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2029-1",
+   "timestamp": "2026-09-29T04:58:31Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "write_rate": "420 writes/s (baseline 42)",
+    "rename_ratio": "0.14 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2029-2",
+   "timestamp": "2026-09-29T04:58:32Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "syscall_frequency": "5.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2029-3",
+   "timestamp": "2026-09-29T04:58:33Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "pg_dump (PID 3318)",
+    "FIM": "60 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2030-1",
+   "timestamp": "2026-09-29T05:22:08Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "write_rate": "180 writes/s (baseline 42)",
+    "rename_ratio": "0.08 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2030-2",
+   "timestamp": "2026-09-29T05:22:09Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "syscall_frequency": "3.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2030-3",
+   "timestamp": "2026-09-29T05:22:10Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-06",
+   "details": {
+    "process": "find (PID 28871)",
+    "FIM": "24 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2031-1",
+   "timestamp": "2026-09-29T05:47:24Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "write_rate": "220 writes/s (baseline 42)",
+    "rename_ratio": "0.09 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2031-2",
+   "timestamp": "2026-09-29T05:47:25Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "syscall_frequency": "3.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2031-3",
+   "timestamp": "2026-09-29T05:47:26Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-03",
+   "details": {
+    "process": "clamscan (PID 4390)",
+    "FIM": "30 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2032-1",
+   "timestamp": "2026-09-29T06:15:42Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "write_rate": "260 writes/s (baseline 42)",
+    "rename_ratio": "0.10 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2032-2",
+   "timestamp": "2026-09-29T06:15:43Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "syscall_frequency": "3.9k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2032-3",
+   "timestamp": "2026-09-29T06:15:44Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "7z (PID 17302)",
+    "FIM": "36 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2033-1",
+   "timestamp": "2026-09-29T06:41:01Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2033-2",
+   "timestamp": "2026-09-29T06:41:02Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2033-3",
+   "timestamp": "2026-09-29T06:41:03Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "updatedb (PID 2210)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2034-1",
+   "timestamp": "2026-09-29T06:58:18Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "write_rate": "1,420 writes/s (baseline 42)",
+    "rename_ratio": "0.47 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2034-2",
+   "timestamp": "2026-09-29T06:58:19Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "syscall_frequency": "10.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2034-3",
+   "timestamp": "2026-09-29T06:58:20Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-08",
+   "details": {
+    "process": "lockcrypt (PID 5527)",
+    "FIM": "200 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2035-1",
+   "timestamp": "2026-09-29T07:31:07Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "write_rate": "380 writes/s (baseline 42)",
+    "rename_ratio": "0.13 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2035-2",
+   "timestamp": "2026-09-29T07:31:08Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "syscall_frequency": "5.1k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2035-3",
+   "timestamp": "2026-09-29T07:31:09Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-07",
+   "details": {
+    "process": "logrotate (PID 611)",
+    "FIM": "54 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2036-1",
+   "timestamp": "2026-09-29T07:52:29Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "write_rate": "1,680 writes/s (baseline 42)",
+    "rename_ratio": "0.53 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2036-2",
+   "timestamp": "2026-09-29T07:52:30Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "syscall_frequency": "11.0k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2036-3",
+   "timestamp": "2026-09-29T07:52:31Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-04",
+   "details": {
+    "process": "openssl enc (PID 8841)",
+    "FIM": "230 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2037-1",
+   "timestamp": "2026-09-29T08:10:01Z",
+   "source": "auditd",
+   "event_type": "process.file_access",
+   "host": "HOST-02",
+   "details": {
+    "process": "python3 (PID 9310)",
+    "file": "/srv/finance/payroll_q3.xlsx",
+    "syscall": "openat"
+   }
+  },
+  {
+   "event_id": "EVT-2037-2",
+   "timestamp": "2026-09-29T08:10:02Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.file_modified",
+   "host": "HOST-02",
+   "details": {
+    "process": "python3 (PID 9310)",
+    "file": "/srv/finance/payroll_q3.xlsx",
+    "event": "IN_MODIFY"
+   }
+  },
+  {
+   "event_id": "EVT-2038-1",
+   "timestamp": "2026-09-29T08:57:38Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "write_rate": "1,030 writes/s (baseline 42)",
+    "rename_ratio": "0.38 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2038-2",
+   "timestamp": "2026-09-29T08:57:39Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "syscall_frequency": "8.5k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2038-3",
+   "timestamp": "2026-09-29T08:57:40Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-05",
+   "details": {
+    "process": "tar (PID 22014)",
+    "FIM": "155 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2039-1",
+   "timestamp": "2026-09-29T09:22:06Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "write_rate": "260 writes/s (baseline 42)",
+    "rename_ratio": "0.10 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2039-2",
+   "timestamp": "2026-09-29T09:22:07Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "syscall_frequency": "3.9k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2039-3",
+   "timestamp": "2026-09-29T09:22:08Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-01",
+   "details": {
+    "process": "rsync (PID 1893)",
+    "FIM": "36 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2040-1",
+   "timestamp": "2026-09-29T09:33:50Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "write_rate": "300 writes/s (baseline 42)",
+    "rename_ratio": "0.11 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2040-2",
+   "timestamp": "2026-09-29T09:33:51Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "syscall_frequency": "4.3k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2040-3",
+   "timestamp": "2026-09-29T09:33:52Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-06",
+   "details": {
+    "process": "gzip (PID 30122)",
+    "FIM": "42 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2041-1",
+   "timestamp": "2026-09-29T09:41:12Z",
+   "source": "irdp",
+   "event_type": "behavioural.features",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "write_rate": "1,840 writes/s (baseline 42)",
+    "rename_ratio": "0.61 of file operations"
+   }
+  },
+  {
+   "event_id": "EVT-2041-2",
+   "timestamp": "2026-09-29T09:41:13Z",
+   "source": "auditd",
+   "event_type": "syscall.summary",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "syscall_frequency": "12.4k/s (auditd)"
+   }
+  },
+  {
+   "event_id": "EVT-2042-1",
+   "timestamp": "2026-09-29T09:41:14Z",
+   "source": "auditd",
+   "event_type": "process.file_access",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "file": "/home/shared/budget_report.docx",
+    "syscall": "openat"
+   }
+  },
+  {
+   "event_id": "EVT-2041-3",
+   "timestamp": "2026-09-29T09:41:14Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.modified_burst",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "FIM": "312 files modified in 9 s"
+   }
+  },
+  {
+   "event_id": "EVT-2042-2",
+   "timestamp": "2026-09-29T09:41:15Z",
+   "source": "wazuh-fim",
+   "event_type": "fim.file_modified",
+   "host": "HOST-03",
+   "details": {
+    "process": "enc_worker.py (PID 4127)",
+    "file": "/home/shared/budget_report.docx",
+    "event": "IN_MODIFY"
+   }
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "meta": {
+  "is_mock": true
+ },
+ "items": [
+  {
+   "host": "HOST-01",
+   "file": "invoice_2026.xlsx",
+   "location": "/home/shared/",
+   "status": "Protected",
+   "last_event": null,
+   "alert_id": null
+  },
+  {
+   "host": "HOST-02",
+   "file": "payroll_q3.xlsx",
+   "location": "/srv/finance/",
+   "status": "Triggered",
+   "last_event": "2026-09-29T08:10:02Z",
+   "alert_id": "A-2037"
+  },
+  {
+   "host": "HOST-03",
+   "file": "budget_report.docx",
+   "location": "/home/shared/",
+   "status": "Triggered",
+   "last_event": "2026-09-29T09:41:15Z",
+   "alert_id": "A-2042"
+  },
+  {
+   "host": "HOST-04",
+   "file": "contracts_backup.pdf",
+   "location": "/mnt/archive/",
+   "status": "Protected",
+   "last_event": null,
+   "alert_id": null
+  },
+  {
+   "host": "HOST-05",
+   "file": "customer_list.csv",
+   "location": "/home/sales/",
+   "status": "Protected",
+   "last_event": null,
+   "alert_id": null
+  },
+  {
+   "host": "HOST-06",
+   "file": "hr_records.docx",
+   "location": "/home/hr/",
+   "status": "Protected",
+   "last_event": null,
+   "alert_id": null
+  }
+ ],
+ "activity": [
+  {
+   "text": "budget_report.docx modified on HOST-03",
+   "hot": true,
+   "timestamp": "2026-09-29T09:41:15Z"
+  },
+  {
+   "text": "payroll_q3.xlsx opened on HOST-02",
+   "hot": false,
+   "timestamp": "2026-09-29T08:10:02Z"
+  },
+  {
+   "text": "Integrity check passed, 6 hosts",
+   "hot": false,
+   "timestamp": "2026-09-29T06:00:00Z"
+  }
+ ]
+}
