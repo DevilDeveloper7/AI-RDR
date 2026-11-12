@@ -1,6 +1,8 @@
 """Flask API for M4 (binds to localhost:5004).
 
 POST /enrich               synchronous lookup -> contract response (tests/demos)
+POST /enrich/m5            same lookup, answered as the M5 `threat_intel` record
+                           (200 record | 422 type M5 cannot use: md5/sha1/domain)
 POST /enrich/async         validate now, 202 {"job_id"}; lookup in background
 GET  /enrich/jobs/<id>     {"status": pending|done|failed, "result": ...}; 404 if unknown
 GET  /health               liveness + whether keys are set (never the keys)
@@ -17,6 +19,7 @@ from .config import Settings
 from .enricher import Enricher
 from .http import HttpClient
 from .jobs import JobManager
+from .m5_adapter import to_m5_record
 from .providers.abusech import AbuseChProvider
 from .providers.mock import load_mock_providers
 from .providers.otx import OTXProvider
@@ -73,6 +76,20 @@ def create_app(settings: Optional[Settings] = None, enricher: Optional[Enricher]
         except InvalidIndicator as exc:
             return jsonify(error=str(exc)), 400
         return jsonify(enricher.enrich(alert_id, ioc_type, value))
+
+    @app.post("/enrich/m5")
+    def enrich_m5():
+        try:
+            alert_id, ioc_type, value = parse_body()
+        except InvalidIndicator as exc:
+            return jsonify(error=str(exc)), 400
+        result = enricher.enrich(alert_id, ioc_type, value)
+        record = to_m5_record(result, allow_synthetic=mock)   # mock data only in mock mode
+        if record is not None and mock:
+            record["synthetic"] = True        # every answer in mock mode is lab data
+        if record is None:
+            return jsonify(error="M5 only accepts sha256 hashes and IP addresses"), 422
+        return jsonify(record)
 
     @app.post("/enrich/async")
     def enrich_async():

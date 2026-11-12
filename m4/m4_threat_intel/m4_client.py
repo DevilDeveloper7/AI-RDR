@@ -49,3 +49,16 @@ def enrich(ioc_type: str, value: str, alert_id: str, timeout: float = 5.0,
             "malicious", "suspicious", "unknown", "clean"):
         return unknown_result(alert_id, ioc_type, value, "M4 returned an unexpected response")
     return body
+
+
+def enrich_for_m5(ioc_type: str, value: str, alert_id: str, timeout: float = 5.0,
+                  base_url: str = DEFAULT_M4_URL, session: Optional[Any] = None,
+                  allow_synthetic: bool = False) -> Optional[Dict[str, Any]]:
+    """Lookup and return the record for M5's bundle["threat_intel"] (never raises).
+
+    Returns None for md5/sha1/domain (M5 has no contract for them): add nothing
+    to the bundle. If M4 is down the record has status "unavailable".
+    """
+    from .m5_adapter import to_m5_record
+    return to_m5_record(enrich(ioc_type, value, alert_id, timeout, base_url, session),
+                        allow_synthetic=allow_synthetic)
