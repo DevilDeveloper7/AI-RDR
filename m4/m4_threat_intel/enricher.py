@@ -68,13 +68,14 @@ def _hit_sources(result: ProviderResult) -> List[str]:
 class Enricher:
     def __init__(self, primary: Provider, secondary: Optional[Provider] = None,
                  allowlist: Optional[Allowlist] = None, cache: Optional[Cache] = None,
-                 ttl_hit: int = 600, ttl_miss: int = 300):
+                 ttl_hit: int = 600, ttl_miss: int = 300, recent=None):
         self.primary = primary
         self.secondary = secondary
         self.allowlist = allowlist or Allowlist()
         self.cache = cache
         self.ttl_hit = ttl_hit
         self.ttl_miss = ttl_miss
+        self.recent = recent          # optional RecentLog (answers listed to M6)
 
     def enrich(self, alert_id: str, ioc_type: str, value: str) -> Dict[str, Any]:
         started = time.perf_counter()
@@ -98,7 +99,10 @@ class Enricher:
                     self.cache.set(ioc_type, value, core, ttl)
 
         # alert_id always comes from the CURRENT request, even for a cached answer.
-        return _response(alert_id, ioc_type, value, core, cached=cached, started=started)
+        response = _response(alert_id, ioc_type, value, core, cached=cached, started=started)
+        if self.recent is not None:
+            self.recent.add(response)
+        return response
 
     def _lookup(self, ioc_type: str, value: str) -> Dict[str, Any]:
         results = [self._ask(self.primary, ioc_type, value)]

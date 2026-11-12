@@ -7,10 +7,11 @@ from .m1.mock import MockM1
 from .m2.mock import MockM2
 from .m3.mock import MockM3
 from .m4.mock import MockM4
+from .m4.real import RealM4
 from .m5.mock import MockM5
 
 _MOCKS = {"m1": MockM1, "m2": MockM2, "m3": MockM3, "m4": MockM4, "m5": MockM5}
-_REAL = {}  # "m2": RealM2 ... added when a teammate confirms their interface
+_REAL = {"m4": RealM4}  # more are added when a teammate confirms their interface
 
 
 def build_adapters(integrations_config):
