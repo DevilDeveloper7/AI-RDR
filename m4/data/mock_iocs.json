@@ -1,0 +1,13 @@
+{
+  "_comment": "FAKE indicators for offline demos only (M4_MOCK_PROVIDERS=1). Not real threat intelligence.",
+  "abusech": {
+    "hash": {"1111111111111111111111111111111111111111111111111111111111111111": 95},
+    "ip": {},
+    "domain": {"mock-c2.example": 90}
+  },
+  "otx": {
+    "hash": {},
+    "ip": {"8.8.4.4": 40},
+    "domain": {"mock-c2.example": 50, "mock-noisy.example": 45}
+  }
+}

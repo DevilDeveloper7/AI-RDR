@@ -1,0 +1,21 @@
+{
+  "counts": {
+    "malicious": 25,
+    "benign": 25,
+    "lab": 0,
+    "lookup_failures": 0
+  },
+  "detection_rate": 1.0,
+  "false_positive_rate": 0.0,
+  "precision": 1.0,
+  "lab_sample_coverage": null,
+  "cold_latency_ms": {
+    "mean": 2069.7,
+    "median": 1951.7,
+    "p95": 3076.4
+  },
+  "cold_pass_seconds": 103.5,
+  "warm_cache_hit_rate": 1.0,
+  "warm_latency_ms_mean": 1.9,
+  "warm_failures": 0
+}

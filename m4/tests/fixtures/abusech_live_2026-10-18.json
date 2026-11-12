@@ -1,0 +1,37 @@
+{
+  "_note": "REAL abuse.ch API responses recorded by Kiana on 2026-10-18 with scripts/try_abusech.py (macOS). MalwareBazaar 'data' trimmed to the fields M4 reads plus a few for context; yara_rules list omitted. No key included.",
+  "malwarebazaar_found": {
+    "query_status": "ok",
+    "data": [{
+      "sha256_hash": "3474645503ee71af316f174c9f842261a1d37bf596376c8f90483cec57333b78",
+      "sha1_hash": "5782b93c74a84919375b9b2fa124b563541c159d",
+      "md5_hash": "3b43033aa28a239c970698dd88d9d7aa",
+      "first_seen": "2026-10-18 13:26:32",
+      "last_seen": null,
+      "file_type_mime": "application/x-executable",
+      "file_type": "elf",
+      "signature": null,
+      "tags": ["elf"]
+    }]
+  },
+  "malwarebazaar_not_found": {"query_status": "hash_not_found"},
+  "threatfox_no_result": {"query_status": "no_result", "data": "Your search did not yield any results"},
+  "urlhaus_host_example_com": {
+    "query_status": "ok",
+    "urlhaus_reference": "https://urlhaus.abuse.ch/host/example.com/",
+    "host": "example.com",
+    "firstseen": "2023-03-28 11:35:11 UTC",
+    "url_count": "4",
+    "blacklists": {"spamhaus_dbl": "not listed", "surbl": "not listed"},
+    "urls": [{
+      "id": "3949568",
+      "url": "http://example.com/test_drop_check",
+      "url_status": "offline",
+      "date_added": "2026-10-13 14:15:06 UTC",
+      "threat": "malware_download",
+      "larted": "false",
+      "takedown_time_seconds": null,
+      "tags": ["automated", "cowrie", "honeypot"]
+    }]
+  }
+}
