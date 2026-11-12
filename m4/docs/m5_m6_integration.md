@@ -1,7 +1,8 @@
 # Using M4 from M5 (response/case manager) and M6 (dashboard)
 
-M5 and M6 have not yet specified their formats, so this assumes they consume
-the agreed contract response unchanged (`docs/interface_contract.md`).
+M6 has not yet specified its format, so it is assumed to consume the agreed
+contract response unchanged (`docs/interface_contract.md`). M5 has a fixed
+`threat_intel` record format (`m5/ai_rdr_risk.py`); see "M5 record" below.
 **Confirm with both teammates.**
 
 ## M5
@@ -23,6 +24,24 @@ case.attach("threat_intel", ti)
 
 For the alert path, prefer `POST /enrich/async` and poll
 `GET /enrich/jobs/<job_id>`, so a slow lookup never delays containment.
+
+### M5 record (`POST /enrich/m5`, or `enrich_for_m5()` in Python)
+Put the returned object into `bundle["threat_intel"]`. It is checked against
+M5's real `RiskMatrix` in `tests/test_m5_adapter.py`.
+
+| M4 result | M5 `status` | Counts in M5? |
+|---|---|---|
+| `malicious` (sha256 or IP) | `match`, `malicious: true` | yes, weight 55, only if fresh (see below) and the indicator equals the bundle's `sha256` / `src_ip` |
+| `suspicious`, `clean`, `unknown` without error | `no_match` (`m4_verdict` keeps the real verdict) | no (0) |
+| `unknown` with `error`, M4 down or timed out | `unavailable` | no (0) |
+| mock-mode data (when not allowed) | `unavailable`, `reason: synthetic_data_not_allowed` | no (0) |
+| md5, sha1, domain | endpoint answers 422 / `enrich_for_m5` returns `None`: add nothing | n/a |
+
+* `checked_at` is the original `enriched_at` (not renewed by a cache hit).
+  M5 accepts it only when `-30 s <= now - checked_at <= 900 s` (900 is inclusive,
+  verified). Cache TTLs (600 s hit, 300 s miss) stay below that window.
+* Do not copy `checked_at` into `timestamp`: M5 uses `timestamp` for a different rule.
+* M4 and M5 hosts need NTP-synced clocks.
 
 ## M6 (threat-intelligence panel)
 Suggested fields: `verdict` (coloured badge), `score`, `sources`, `tags`,
