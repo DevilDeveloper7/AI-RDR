@@ -3,6 +3,9 @@
 POST /enrich               synchronous lookup -> contract response (tests/demos)
 POST /enrich/m5            same lookup, answered as the M5 `threat_intel` record
                            (200 record | 422 type M5 cannot use: md5/sha1/domain)
+POST /enrich/m6            same lookup, answered as the M6 indicator record
+GET  /indicators           recent answers as M6 indicator records, newest first
+                           (?limit=N, 1..500; empty after a restart)
 POST /enrich/async         validate now, 202 {"job_id"}; lookup in background
 GET  /enrich/jobs/<id>     {"status": pending|done|failed, "result": ...}; 404 if unknown
 GET  /health               liveness + whether keys are set (never the keys)
@@ -20,10 +23,12 @@ from .enricher import Enricher
 from .http import HttpClient
 from .jobs import JobManager
 from .m5_adapter import to_m5_record
+from .m6_adapter import to_m6_indicator
 from .providers.abusech import AbuseChProvider
 from .providers.mock import load_mock_providers
 from .providers.otx import OTXProvider
 from .ratelimit import TokenBucket
+from .recent import RecentLog
 from .schema import InvalidIndicator, parse_request
 
 
@@ -46,7 +51,7 @@ def build_enricher(settings: Settings, mock: bool = False) -> Enricher:
     return Enricher(primary, secondary,
                     allowlist=Allowlist.from_file(settings.allowlist_path),
                     cache=Cache(settings.cache_path),
-                    ttl_hit=settings.ttl_hit, ttl_miss=settings.ttl_miss)
+                    ttl_hit=settings.ttl_hit, ttl_miss=settings.ttl_miss, recent=RecentLog())
 
 
 def create_app(settings: Optional[Settings] = None, enricher: Optional[Enricher] = None,
@@ -90,6 +95,26 @@ def create_app(settings: Optional[Settings] = None, enricher: Optional[Enricher]
         if record is None:
             return jsonify(error="M5 only accepts sha256 hashes and IP addresses"), 422
         return jsonify(record)
+
+    @app.post("/enrich/m6")
+    def enrich_m6():
+        try:
+            alert_id, ioc_type, value = parse_body()
+        except InvalidIndicator as exc:
+            return jsonify(error=str(exc)), 400
+        return jsonify(to_m6_indicator(enricher.enrich(alert_id, ioc_type, value)))
+
+    @app.get("/indicators")
+    def indicators():
+        try:
+            limit = int(request.args.get("limit", 100))
+        except ValueError:
+            return jsonify(error="limit must be an integer"), 400
+        if not 1 <= limit <= 500:
+            return jsonify(error="limit must be between 1 and 500"), 400
+        recent = getattr(enricher, "recent", None)
+        items = [to_m6_indicator(r) for r in recent.items(limit)] if recent else []
+        return jsonify(items=items, meta={"is_mock": mock, "role": "enrichment only"})
 
     @app.post("/enrich/async")
     def enrich_async():
