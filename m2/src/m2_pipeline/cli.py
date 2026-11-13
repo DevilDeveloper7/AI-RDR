@@ -9,6 +9,7 @@ from typing import Any
 
 from .features import FeatureGenerationConfig, generate_feature_file
 from .io import discover_trace_files, iter_normalized_runs
+from .robustness import evaluate_robustness
 from .training import train_models
 from .windowing import SlidingWindowConfig, iter_run_windows
 
@@ -68,6 +69,20 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Feature to omit for an ablation run; repeat for multiple features",
     )
+
+    robustness = subparsers.add_parser(
+        "robustness",
+        help=(
+            "Repeated run-level cross-validation with confidence bounds, "
+            "unseen-scenario, SHAP faithfulness and false-alarm checks"
+        ),
+    )
+    robustness.add_argument("features", type=Path)
+    robustness.add_argument("model", type=Path)
+    robustness.add_argument("output_directory", type=Path)
+    robustness.add_argument("--seed", type=int, default=321)
+    robustness.add_argument("--repetitions", type=int, default=10)
+    robustness.add_argument("--folds", type=int, default=5)
     return parser
 
 
@@ -207,6 +222,15 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 source=args.source,
                 max_runs=args.max_runs,
+            )
+        elif args.command == "robustness":
+            result = evaluate_robustness(
+                args.features,
+                args.model,
+                args.output_directory,
+                seed=args.seed,
+                repetitions=args.repetitions,
+                folds=args.folds,
             )
         else:
             result = train_models(
