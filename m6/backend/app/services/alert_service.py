@@ -18,6 +18,7 @@ from ..integrations.base import IntegrationError, MalformedResponse
 
 ML, HONEY = "ML Behavioural Detection", "Honey-File Trigger"
 _BEHAVIOURAL = ("behavioural.features", "syscall.summary", "fim.modified_burst")
+_NOT_ASSESSED = {"response_state": "Not assessed", "verification_state": "Not assessed", "history": []}  # real (M2/M3) alert M5 has no case for yet
 _LIST_FIELDS = ("id", "severity", "detection_type", "host", "process", "activity", "timestamp",
                 "response_state", "verification_state", "status", "source", "confidence")
 
@@ -28,6 +29,12 @@ def _parse(iso):
 
 def _iso(dt):
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _aware(iso):
+    """Parsed time, or None when the string has no timezone (M3 local time is never given one)."""
+    dt = _parse(iso)
+    return dt if dt.tzinfo else None
 
 
 def _now_iso():
@@ -63,21 +70,27 @@ class AlertService:
         base = {}
         for d in self._a["m2"].list_detections():
             C.validate_detection(d)
-            base[d["alert_id"]] = {"id": d["alert_id"], "severity": d["severity"], "detection_type": ML, "host": d["host"],
+            base[d["alert_id"]] = {"id": d["alert_id"], "severity": d["severity"] or C.UNRATED, "detection_type": ML, "host": d["host"],
                                    "process": d["process"], "activity": d["activity"], "timestamp": d["timestamp"],
-                                   "confidence": d["confidence"], "source": "mock", "_src": d}
+                                   "confidence": d["confidence"], "source": d.get("source", "mock"), "_src": d}
+            if d.get("m2"):
+                base[d["alert_id"]]["m2"] = d["m2"]  # original M2 fields, unchanged
         return base
 
     def _honey_alerts(self):  # independent path: M3 -> M6, never through M2
         base = {}
         for t in self._a["m3"].list_triggers():
             C.validate_trigger(t)
-            base[t["alert_id"]] = {"id": t["alert_id"], "severity": t["severity"], "detection_type": HONEY, "host": t["host"],
+            base[t["alert_id"]] = {"id": t["alert_id"], "severity": t["severity"] or C.UNRATED, "detection_type": HONEY, "host": t["host"],
                                    "process": t["process"], "activity": t["activity"], "timestamp": t["timestamp"],
-                                   "confidence": None, "honey_file": t["honey_file"], "source": "mock", "_src": t}
+                                   "confidence": None, "honey_file": t["honey_file"], "source": t.get("source", "mock"), "_src": t}
+            if t.get("m3"):
+                base[t["alert_id"]]["m3"] = t["m3"]  # raw M3 event data, unchanged
         return base
 
     def _compose(self, base, case):
+        if case is None and base["source"] != "mock":
+            case = _NOT_ASSESSED  # real alert that M5 has not assessed yet; M6 never invents a response state
         if case is None:
             raise MalformedResponse(f"M5 has no response case for {base['id']}.")
         item = {k: v for k, v in base.items() if k != "_src"}
@@ -115,7 +128,7 @@ class AlertService:
         item["summary"] = self._summary(item)
         item["evidence"] = self._evidence(base, events)
         item["evidence_status"] = evidence_status
-        item["timeline"] = self._timeline(item, base, events, self._case(alert_id))
+        item["timeline"] = self._timeline(item, base, events, self._case(alert_id) or _NOT_ASSESSED)
         item["indicators"], item["enrichment_status"] = self._indicators(alert_id)
         return item
 
@@ -140,6 +153,11 @@ class AlertService:
 
     @staticmethod
     def _summary(item):
+        if item.get("m3"):
+            m = item["m3"]
+            return (f"Registered honeyfile {m['decoy_id']} was triggered: {m['operation']} on {m['path']} at {m['time_raw']} "
+                    "(timezone not provided by M3). M3 (inotify) does not identify the responsible process or host. "
+                    "Severity and response come from M5 once it assesses this alert.")
         if item["detection_type"] == HONEY:
             return (f"A honey file on {item['host']} was accessed. Honey-file interaction is a high-confidence signal "
                     "and was sent directly to response without ML scoring.")
@@ -151,11 +169,26 @@ class AlertService:
 
     @staticmethod
     def _evidence(base, events):
+        if base.get("m3"):  # real M3 event, shown as received
+            m = base["m3"]
+            rows = [("Decoy ID", m["decoy_id"]), ("Path", m["path"]), ("File name", m["file_name"]), ("Operation", m["operation"]),
+                    ("Event flags", ", ".join(m["event_flags"]) or "none"), ("M3 time", m["time_raw"]),
+                    ("Timezone", m["timestamp_timezone"]), ("Host", "Unattributed (not provided by M3)"),
+                    ("Process", "Unattributed (inotify provides no PID)")]
+            rows += [(f"Detail: {k}", v) for k, v in m["details"].items()] if isinstance(m["details"], dict) else [("Details", m["details"])]
+            return [{"label": k, "value": str(v)} for k, v in rows]
         if base["detection_type"] == HONEY:
             t = base["_src"]
             return [{"label": "Trigger", "value": "Honey file opened / modified (inotify)"}, {"label": "File", "value": t["honey_file"]},
                     {"label": "Event", "value": t["event"]}, {"label": "Model stage", "value": "Bypassed (fast path)"}]
-        return [{"label": k, "value": v} for e in events for k, v in e["details"].items() if k != "process"]
+        rows = [{"label": k, "value": v} for e in events for k, v in e["details"].items() if k != "process"]
+        m2 = base.get("m2")
+        if m2:  # real M2 output, shown as received
+            rows = [{"label": l, "value": str(v).lower() if isinstance(v, bool) else str(v)} for l, v in (
+                ("M2 verdict", m2["prediction"]), ("M2 probability", m2["probability"]), ("M2 threshold", m2["threshold"]),
+                ("M2 alert", m2["alert"]), ("Model", m2["model_name"]), ("Feature version", m2["feature_version"]),
+                ("Response mode", m2["response_mode"])) if v is not None] + rows
+        return rows
 
     @staticmethod
     def _timeline(item, base, events, case):
@@ -164,6 +197,8 @@ class AlertService:
             rows = ([{"timestamp": events[0]["timestamp"], "event": "Telemetry received"}] if events else []) + [
                 {"timestamp": src["timestamp"], "event": "Behavioural anomaly detected"},
                 {"timestamp": src["threshold_exceeded_at"], "event": "ML threshold exceeded"}]
+        elif base.get("m3"):
+            rows = [{"timestamp": src["timestamp"], "event": f"M3 honeyfile event received ({base['m3']['operation']})"}]
         else:
             rows = [{"timestamp": src["timestamp"], "event": "Honey-file event received (inotify)"},
                     {"timestamp": src["timestamp"], "event": "Fast-path alert created"}]
@@ -176,7 +211,9 @@ class AlertService:
     def events_for_alert(self, alert_id):
         """Normalized M1 events on the alert's host around the alert time (not shown in the UI yet)."""
         base = self._require(alert_id)
-        t = _parse(base["timestamp"])
+        t = _aware(base["timestamp"])
+        if t is None:  # M1 events cannot be matched to a time without a timezone
+            return {"alert_id": alert_id, "items": [], "meta": {"is_mock": True, "note": "Alert time has no timezone; M1 correlation skipped."}}
         events = [C.validate_event(e) for e in self._a["m1"].list_events(host=base["host"], since=_iso(t - timedelta(seconds=10)), until=_iso(t + timedelta(seconds=10)))]
         return {"alert_id": alert_id, "items": events, "meta": {"is_mock": True}}
 
@@ -204,7 +241,8 @@ class AlertService:
             if detection_type and a["detection_type"] != detection_type: return False
             if response_state and a["response_state"] != response_state: return False
             if host and a["host"] != host: return False
-            if range_minutes and (ref - _parse(a["timestamp"])).total_seconds() > range_minutes * 60: return False
+            ts = _aware(a["timestamp"])  # a time without timezone cannot be compared with the reference time, so it is not range-filtered
+            if range_minutes and ts and (ref - ts).total_seconds() > range_minutes * 60: return False
             if needle and needle not in " ".join((a["id"], a["host"], a["process"], a["detection_type"])).lower(): return False
             return True
 
@@ -242,6 +280,9 @@ class AlertService:
     def request_action(self, alert_id, action, reason=None, override=False):
         base = self._require(alert_id)
         m5 = self._a["m5"]
+        if base["source"] != "mock" and self._case(alert_id) is None:
+            # real alert (e.g. M3 honeyfile) that M5 has not assessed: M6 itself refuses, M5 is never asked
+            raise ApiError("RESPONSE_NOT_ASSESSED", "M5 has not assessed this alert, so no response action can be requested from M6.", 409)
         result = C.validate_action_result(m5.request_action(
             alert_id, action, {"host": base["host"], "process": base["process"]}, self.analyst, reason, analyst_override=override))
         if override or action in ("kill", "isolate"):

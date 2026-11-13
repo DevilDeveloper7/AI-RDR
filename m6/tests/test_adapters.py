@@ -25,7 +25,7 @@ def test_registry_builds_a_mock_adapter_for_every_module(ad):
 
 def test_registry_refuses_real_mode_until_a_real_adapter_exists():
     cfg = Config().INTEGRATIONS
-    cfg["m4"] = {"mode": "real", "base_url": ""}
+    cfg["m5"] = {"mode": "real", "base_url": ""}  # M2, M3 and M4 have real adapters; M5 does not
     with pytest.raises(NotImplementedError):
         build_adapters(cfg)
 

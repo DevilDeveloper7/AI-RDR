@@ -148,6 +148,6 @@ def test_integration_check_updates_last_check(client):
 
 
 def test_real_mode_is_refused_until_implemented(monkeypatch):
-    monkeypatch.setenv("M2_MODE", "real")
+    monkeypatch.setenv("M5_MODE", "real")  # M2, M3 and M4 have real adapters; M5 does not
     with pytest.raises(NotImplementedError):
         create_app()

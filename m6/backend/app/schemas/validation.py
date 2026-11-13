@@ -5,7 +5,7 @@ from flask import request
 
 from ..errors import ApiError
 
-ALERT_ID_RE = re.compile(r"^A-\d{1,6}$")
+ALERT_ID_RE = re.compile(r"^A-[A-Za-z0-9._:-]{1,120}$")
 ACTIONS = ("freeze", "verify", "kill", "isolate", "thaw")
 SEVERITIES = ("Critical", "High", "Medium")
 DETECTION_TYPES = ("ML Behavioural Detection", "Honey-File Trigger")

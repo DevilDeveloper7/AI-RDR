@@ -107,7 +107,7 @@ stop_previous() { # stop M6 processes left over from an earlier start (for examp
   for pid in $(cat "$PIDFILE"); do
     cmd=$(ps -p "$pid" -o command= 2>/dev/null)
     case "$cmd" in
-      *backend/run.py*|*vite*) pkill -P "$pid" 2>/dev/null; kill "$pid" 2>/dev/null; stopped=0 ;;
+      *[Pp]ython*backend/run.py*|*node_modules/.bin/vite*) pkill -P "$pid" 2>/dev/null; kill "$pid" 2>/dev/null; stopped=0 ;;  # only M6's own processes; a reused PID of anything else is left alone
     esac
   done
   rm -f "$PIDFILE"

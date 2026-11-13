@@ -8,6 +8,7 @@ def honey_files(m3):
     triggered = [i for i in items if i["status"] == "Triggered"]
     last = max(triggered, key=lambda i: i["last_event"], default=None)
     hosts = {i["host"] for i in items}
+    from_mock_sample = "status_source" in data  # real adapter without a status feed labels its sample data
     return {
         "summary": {
             "watcher_status": data["watcher_status"],
@@ -17,8 +18,9 @@ def honey_files(m3):
             "triggered": len(triggered),
             "triggered_hosts": [i["host"] for i in triggered],
             "last_interaction": {"time": last["last_event"], "host": last["host"]} if last else None,
+            **({"status_source": data["status_source"]} if from_mock_sample else {}),
         },
         "items": items,
         "activity": data["activity"],
-        "meta": {"is_mock": True},
+        "meta": {"is_mock": True, **({"status_source": data["status_source"], "status_note": data["status_note"]} if from_mock_sample else {})},
     }

@@ -8,15 +8,16 @@ from .base import MalformedResponse
 
 NONE = type(None)
 SEVERITIES = ("Critical", "High", "Medium")
+UNRATED = "Unrated"  # M2 and M3 never assign severity; M6 shows this until M5 Risk Fusion provides one
 RESPONSE_STATES = ("Frozen", "Isolated", "Thawed")
 ACTIONS = ("freeze", "verify", "kill", "isolate", "thaw")
 
 # field -> allowed type(s). Extra fields are tolerated.
 EVENT = {"event_id": str, "timestamp": str, "source": str, "event_type": str, "host": str, "details": dict}                      # M1
-DETECTION = {"alert_id": str, "severity": str, "host": str, "process": str, "activity": str, "timestamp": str,
+DETECTION = {"alert_id": str, "severity": (str, NONE), "host": str, "process": str, "activity": str, "timestamp": str,
              "threshold_exceeded_at": str, "prediction": str, "confidence": (int, float)}                                         # M2
 SHAP = {"model": str, "ransomware_likelihood": (int, float), "explained_at": str, "summary": str, "features": list}           # M2
-TRIGGER = {"alert_id": str, "severity": str, "host": str, "process": str, "honey_file": str, "event": str,
+TRIGGER = {"alert_id": str, "severity": (str, NONE), "host": str, "process": str, "honey_file": str, "event": str,
            "activity": str, "timestamp": str, "high_confidence": bool}                                                           # M3
 HONEY_ITEM = {"host": str, "file": str, "location": str, "status": str, "last_event": (str, NONE), "alert_id": (str, NONE)}    # M3
 INDICATOR = {"indicator": str, "type": str, "reputation": str, "source": str, "related_alert": (str, NONE),
@@ -41,7 +42,7 @@ def validate_event(e):
 
 def validate_detection(d):
     _check("M2", d, DETECTION)
-    if d["severity"] not in SEVERITIES:
+    if d["severity"] is not None and d["severity"] not in SEVERITIES:
         raise MalformedResponse("M2 returned an unknown severity.")
     return d
 
@@ -55,7 +56,7 @@ def validate_shap(s):
 
 def validate_trigger(t):
     _check("M3", t, TRIGGER)
-    if t["severity"] not in SEVERITIES:
+    if t["severity"] is not None and t["severity"] not in SEVERITIES:
         raise MalformedResponse("M3 returned an unknown severity.")
     return t
 
