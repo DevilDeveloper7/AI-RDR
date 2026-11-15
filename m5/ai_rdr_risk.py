@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """Deterministic M5 evidence scoring. No network, database or OS response effects.
 
-Scores are policy priorities, not probabilities. Prototype weights require
-scenario calibration. Inputs must come from authenticated upstream adapters;
-this module neither attributes inotify events nor discovers a PID from a window.
+Scores are policy priorities, not probabilities. Prototype weights require scenario calibration.
 """
 import argparse
 from copy import deepcopy
@@ -207,8 +205,7 @@ class RiskMatrix:
                 strength = p['weights']['ml'] * (.75 + .25 * margin) if positive else 0
                 add('ml', model, strength, 'model_positive' if positive else 'model_negative', process=process)
             except (ValueError, TypeError) as exc:
-                # An invalid optional ML result must not disable an independently
-                # attributed decoy. It remains invalid evidence, never a negative.
+                # An invalid optional ML result must not disable an independently attributed decoy.
                 if not attributed_decoy(data.get('evidence'), data):
                     raise ValueError('Invalid M2 contract: ' + str(exc)) from exc
                 errors.append({'source': 'ml', 'reason': 'invalid_model_contract'})
@@ -243,8 +240,8 @@ class RiskMatrix:
             if operation not in ('READ', 'WRITE', 'DELETE', 'RENAME', 'MOVE_OUT', 'MOVE_IN'):
                 raise ValueError('Unsupported honeyfile operation')
             attributed = attributed_decoy(raw, data)
-            # Only the existing authenticated attributed-decoy contract grants
-            # write authority. Native M3 fields are retained as host context.
+            # Only the existing authenticated attributed-decoy contract grants  write authority.
+            # Native M3 fields are retained as host context.
             process = identity(raw.get('process') or raw)
             add('honeyfile', raw, p['weights']['attributed_decoy'] if attributed else p['weights']['honeyfile'],
                 'attributed_decoy_write' if attributed else 'unattributed_honeyfile_' + operation.lower(),

@@ -57,8 +57,7 @@ def wazuh(runtime, action, incoming=sys.stdin, outgoing=sys.stdout):
 def validate_evaluation(runtime, data, case_id):
     """Fence only explicitly labelled lab requests; normal alerts are unchanged.
 
-    Call under the response lock, immediately before any host mutation. The
-    evaluator closes its unique case under the same lock before cleanup.
+    Call under the response lock, immediately before any host mutation. The evaluator closes its unique case under the same lock before cleanup.
     """
     evaluation = data.get('evaluation')
     if evaluation is None:
@@ -82,7 +81,6 @@ def identify_target(runtime, action, data, agent_id):
 
 Host isolation identifies an enrolled endpoint, block identifies an IP, disable
 identifies a supported local account. None of these claims a honeyfile PID.
-Process actions additionally verify the immutable identity against the live OS.
 """
     if action in ('freeze', 'kill'):
         if not process_identity_valid(data):

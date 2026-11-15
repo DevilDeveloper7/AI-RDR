@@ -1,4 +1,4 @@
-"""Shared playbooks. Call under Runtime.transaction; persist before mutations."""
+"""Shared playbooks. Call under Runtime.transaction"""
 import pwd
 import re
 import signal
@@ -40,8 +40,7 @@ class Actions:
                                               str(port), '-j', 'ACCEPT'])
                     for controller in controllers:
                         if (':' in controller) == (version == 6):
-                            # Inbound SSH and its outbound replies, restricted to
-                            # the named controller. No blanket established allow.
+                            # Inbound SSH and its outbound replies, restricted to the named controller.
                             rules.append([direction, controller, '-p', 'tcp',
                                           '--dport' if parent == 'INPUT' else '--sport',
                                           str(ssh_port), '-j', 'ACCEPT'])
@@ -66,7 +65,6 @@ class Actions:
                             command('-A', chain, *rule)
                     if command('-C', parent, '-j', chain, check=False).returncode:
                         command('-I', parent, '1', '-j', chain)
-                    # Command success alone is insufficient; verify installed rules.
                     for rule in rules:
                         command('-C', chain, *rule)
                     command('-C', parent, '-j', chain)
@@ -106,7 +104,6 @@ class Actions:
         else:
             if (current['locked'], current['expiry']) == (previous['locked'], previous['expiry']):
                 return  # Recover a crash after restoration but before durable completion.
-            # Do not overwrite an administrator's intervening expiry change.
             if current['expiry'] != 1:
                 raise RuntimeError('Account changed externally; analyst reconciliation required')
             args = ['usermod', '-e', str(previous['expiry']) if previous['expiry'] >= 0 else '']

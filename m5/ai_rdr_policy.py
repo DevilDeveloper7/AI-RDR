@@ -1,7 +1,6 @@
 """Separate target identification from action-specific response authority.
 
-Inputs arrive over the trusted local/Wazuh control path. Caller-supplied decision
-booleans are never authority; M5 computes these fields from its own policy.
+Inputs arrive over the trusted local/Wazuh control path.
 """
 
 ACTIONS = frozenset(('freeze', 'kill', 'isolate', 'block', 'disable'))
@@ -62,21 +61,21 @@ def response_decision(action, data, config, *, target_identified, analyst_approv
     """Return distinct identification, permission and execution decisions.
 
     target_identified is computed by the executor, not read from alert JSON.
-    Human approval comes only from authoritative local operation state. Neither
-    identification nor an automatic input flag grants action permission alone.
+    Human approval comes only from authoritative local operation state.
     """
     if action not in ACTIONS or type(target_identified) is not bool:
         raise ValueError('Invalid response decision request')
     if type(analyst_approved) is not bool or type(process_verified) is not bool:
         raise ValueError('Invalid analyst approval')
+    
     mode = response_mode(data)
     general = _actions(config, 'automatic_actions')
     decoy = _actions(config, 'attributed_decoy_actions', DECOY_ACTIONS)
     attributed = (attributed_decoy(data.get('evidence'), data)
                   and (target_identified if action in ('freeze', 'kill') else process_verified))
     allowed, source, reason = False, 'none', 'action_not_authorised'
-    # The independent decoy path is not an ML prediction. Its policy is explicit
-    # and separate, so an M2-only restriction does not disable attributed decoys.
+    # The independent decoy path is not an ML prediction. Its policy is explicit and separate.
+
     if attributed and action in decoy:
         allowed, source, reason = True, 'attributed_decoy', 'attributed_decoy_policy'
     elif mode == 'alert_only':
@@ -85,11 +84,10 @@ def response_decision(action, data, config, *, target_identified, analyst_approv
         reason = 'explicit_automatic_mode_required'
     elif action in general:
         allowed, source, reason = True, 'endpoint_policy', 'configured_automatic_action'
-    # A score or generic action permission never confirms a kill target.
+    # A score or generic action permission never confirms a kill.
     if action == 'kill' and not attributed:
         allowed, source, reason = False, 'none', 'positive_evidence_required'
-    # Freeze is the explicitly permitted reversible first step. Extra approval
-    # gates termination and standalone network/account restrictions.
+    # Freeze is the explicitly permitted reversible first step. Extra approval gates termination and standalone network/account restrictions.
     if action != 'freeze' and (config.get('critical_asset', False) or config.get('require_approval', False)):
         allowed, source, reason = False, 'none', 'analyst_approval_required'
     execute = target_identified and (allowed or analyst_approved)

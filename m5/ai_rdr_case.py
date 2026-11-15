@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local AICM CLI. File permissions authorise access; no remote API is exposed."""
+"""Local AICM CLI. File permissions authorise access"""
 import argparse
 import json
 import os
