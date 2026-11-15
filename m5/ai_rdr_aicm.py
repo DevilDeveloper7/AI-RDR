@@ -1,9 +1,4 @@
-"""AI-RDR incident cases and durable audit journal (stdlib SQLite, schema v1).
-
-Application-level append-only records; not a defence against a root compromise.
-Callers are trusted local components. M6 must authenticate remote callers before
-constructing actor identities or invoking this module.
-"""
+"""AI-RDR incident cases and audit journal."""
 import contextlib
 import datetime as dt
 import hashlib
@@ -74,7 +69,7 @@ def actor_identity(actor):
     if not isinstance(actor, dict) or actor.get('type') not in ('service', 'local_user', 'user'):
         raise ValueError('Explicit actor type and identity required')
     text_id(actor.get('id'), 'actor ID')
-    # Actor metadata comes from the caller's authenticated context, not alert JSON.
+    # Actor metadata comes from the caller's authenticated context.
     return {k: actor[k] for k in ('type', 'id')}
 
 
@@ -152,7 +147,6 @@ class CaseStore:
     def __init__(self, path):
         self.path = Path(path)
         self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        # Prevent SQLite from initially creating an overly permissive file.
         try:
             fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         except FileExistsError:
@@ -340,7 +334,7 @@ class CaseStore:
         return self.get_case(case_id)
 
     def attach_alert(self, case_id, *, producer, agent_id, source_id, occurred_at,
-                     metadata, actor, request_id=None):
+                     metadata, actor, request_id=None, initial_severity='medium'):
         if not isinstance(metadata, dict):
             raise ValueError('Alert metadata must be an object')
         for value in (producer, agent_id, source_id):
@@ -350,7 +344,7 @@ class CaseStore:
         key = str(uuid.uuid5(uuid.NAMESPACE_URL, encode([producer, agent_id, source_id])))
         fingerprint = hashlib.sha256(encode([when, json.loads(body)]).encode()).hexdigest()
         with self.transaction() as db:
-            self._ensure_case(db, case_id, actor)
+            self._ensure_case(db, case_id, actor, severity=initial_severity)
             existing = db.execute('SELECT fingerprint FROM alerts WHERE alert_key=?', (key,)).fetchone()
             if existing and existing['fingerprint'] != fingerprint:
                 raise Conflict('Source alert ID reused with changed content')
@@ -387,6 +381,94 @@ class CaseStore:
             if case_id is not None:
                 self._ensure_case(db, case_id, actor)
             return self._event(db, case_id, event_type, actor, **attributes)
+
+    def record_risk_decision(self, decision, *, actor, request_id=None):
+        """Commit decision, escalation and outbox together before any OS effects."""
+
+        actor = actor_identity(actor)
+        case_id = text_id(decision.get('case_id'), 'Case ID')
+        event_id = text_id(decision.get('decision_id'), 'decision ID')
+        severity = {'unknown': 'low', 'normal': 'low', 'suspicious': 'medium', 'high': 'high'}.get(decision.get('risk_level'))
+        if severity is None:
+            raise ValueError('Invalid risk level')
+        body = redact(decision)
+        with self.transaction() as db:
+            old = db.execute('SELECT case_id,event_type,payload FROM audit_events WHERE event_id=?', (event_id,)).fetchone()
+            if old:
+                if old['case_id'] != case_id or old['event_type'] != 'risk.decided':
+                    raise Conflict('Risk decision ID collides with another event')
+                saved = json.loads(old['payload'])['details']['decision']
+                stable = lambda d: {k: v for k, v in d.items() if k != 'evaluated_at'}
+                if encode(stable(saved)) != encode(stable(body)):
+                    raise Conflict('Risk decision ID reused with different contents')
+                return saved
+            self._ensure_case(db, case_id, actor, severity=severity)
+            row = db.execute('SELECT severity,lifecycle FROM cases WHERE case_id=?', (case_id,)).fetchone()
+            if row['lifecycle'] == 'closed':
+                raise Conflict('Reopen the incident before recording a new risk decision')
+            order = {'low': 0, 'medium': 1, 'high': 2, 'critical': 3}
+            if order[severity] > order[row['severity']]:
+                db.execute('UPDATE cases SET severity=?,version=version+1 WHERE case_id=?', (severity, case_id))
+            self._event(db, case_id, 'risk.decided', actor, event_id=event_id, request_id=request_id,
+                        details={'decision': body, 'severity_before': row['severity'],
+                                 'severity_after': max((severity, row['severity']), key=lambda x: order[x])})
+        return body
+
+    def risk_decision(self, event_id):
+        with self.connection() as db:
+            row = db.execute("SELECT payload FROM audit_events WHERE event_id=? AND event_type='risk.decided'",
+                             (text_id(event_id, 'decision ID'),)).fetchone()
+            if row is None:
+                raise KeyError('Risk decision not recorded')
+            return json.loads(row['payload'])['details']['decision']
+
+    def begin_analyst_request(self, case_id, request_id, body, *, actor, executor, expected_sequence):
+        """Journal an idempotent manual request; never repeat an uncertain effect."""
+        actor = actor_identity(actor)
+        text_id(request_id, 'request ID')
+        fingerprint = hashlib.sha256(encode(body).encode()).hexdigest()
+        with self.transaction() as db:
+            prior = db.execute('SELECT payload FROM audit_events WHERE event_id=?',
+                               ('m6:' + request_id + ':requested',)).fetchone()
+            if prior:
+                event = json.loads(prior['payload'])
+                if (event['case_id'] != case_id or event['actor'] != actor
+                        or event['details']['fingerprint'] != fingerprint):
+                    raise Conflict('Idempotency key reused with a different action')
+                return False
+            case = db.execute('SELECT lifecycle,last_sequence FROM cases WHERE case_id=?', (case_id,)).fetchone()
+            if case is None:
+                raise KeyError(case_id)
+            if case['lifecycle'] == 'closed':
+                raise Conflict('Reopen the incident before an analyst action')
+            if type(expected_sequence) is not int or case['last_sequence'] != expected_sequence:
+                raise Conflict('Case changed; refresh its timeline before acting')
+            self._event(db, case_id, 'analyst.requested', actor, request_id=request_id,
+                        event_id='m6:' + request_id + ':requested', phase='requested', outcome='unknown',
+                        details={'request': body, 'fingerprint': fingerprint, 'executor': executor})
+        return True
+
+    def analyst_request(self, request_id):
+        text_id(request_id, 'request ID')
+        with self.connection() as db:
+            rows = db.execute('SELECT payload FROM audit_events WHERE event_id IN (?,?,?,?)',
+                              tuple('m6:' + request_id + ':' + phase for phase in
+                                    ('requested', 'started', 'completed', 'failed'))).fetchall()
+        events = {json.loads(row['payload'])['event_type']: json.loads(row['payload']) for row in rows}
+        first = events.get('analyst.requested')
+        if first is None:
+            raise KeyError(request_id)
+        done = events.get('analyst.completed') or events.get('analyst.failed')
+        status = 'completed' if 'analyst.completed' in events else 'failed' if done else 'uncertain'
+        return {'request_id': request_id, 'case_id': first['case_id'],
+                'action': first['details']['request']['action'], 'actor': first['actor'],
+                'executor': first['details']['executor'], 'status': status,
+                'completion_verified': status == 'completed',
+                'last_phase': 'completed' if done else 'started' if 'analyst.started' in events else 'requested',
+                'result': done['details'].get('result') if done else None,
+                'error': done['details'].get('error') if done else None,
+                'may_have_effects': 'analyst.started' in events,
+                'recorded_at': (done or first)['recorded_at']}
 
     def load_state(self):
         with self.connection() as db:
@@ -467,9 +549,7 @@ class CaseStore:
 
     def ingest_event(self, event, *, received_by):
         """Idempotent import from a TRUSTED endpoint, not an unauthenticated API.
-
         Preserves origin ID/actor/time and records central sequence separately.
-        This imports history, not authoritative OS state or a central case verdict.
         """
         received_by = actor_identity(received_by)
         body = encode(redact(event))
