@@ -1,0 +1,13 @@
+# AI-RDR | M3 Honeyfile Deception — runtime + test dependencies
+#
+# Linux only: this module uses the kernel inotify API. It will not run on
+# Windows or macOS.
+#
+# Pinned to the versions the Checkpoint 3 test suite was verified against
+# (Python 3.13, Ubuntu 24.04, Linux kernel 6.x).
+
+# runtime
+inotify_simple==2.0.1
+
+# tests
+pytest==9.2.0
