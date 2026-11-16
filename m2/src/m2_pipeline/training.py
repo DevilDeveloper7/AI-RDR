@@ -9,6 +9,51 @@ from typing import Any
 
 from .features import feature_names
 
+CANDIDATE_MODELS = ("logistic_regression", "random_forest", "xgboost")
+
+
+def build_candidate_model(name: str, *, seed: int, scale_pos_weight: float) -> Any:
+    """Return an unfitted candidate with the evaluated hyperparameters."""
+    if name == "logistic_regression":
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import StandardScaler
+
+        return make_pipeline(
+            StandardScaler(),
+            LogisticRegression(
+                class_weight="balanced",
+                max_iter=2000,
+                random_state=seed,
+            ),
+        )
+    if name == "random_forest":
+        from sklearn.ensemble import RandomForestClassifier
+
+        return RandomForestClassifier(
+            n_estimators=400,
+            min_samples_leaf=2,
+            class_weight="balanced_subsample",
+            n_jobs=-1,
+            random_state=seed,
+        )
+    if name == "xgboost":
+        from xgboost import XGBClassifier
+
+        return XGBClassifier(
+            n_estimators=350,
+            max_depth=5,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            reg_lambda=2.0,
+            scale_pos_weight=scale_pos_weight,
+            eval_metric="logloss",
+            n_jobs=-1,
+            random_state=seed,
+        )
+    raise ValueError(f"Unknown candidate model: {name}")
+
 
 def assign_run_splits(
     run_labels: dict[str, str],
@@ -53,8 +98,6 @@ def train_models(
         import joblib
         import numpy as np
         import shap
-        from sklearn.ensemble import RandomForestClassifier
-        from sklearn.linear_model import LogisticRegression
         from sklearn.metrics import (
             accuracy_score,
             average_precision_score,
@@ -66,9 +109,6 @@ def train_models(
             recall_score,
             roc_auc_score,
         )
-        from sklearn.pipeline import make_pipeline
-        from sklearn.preprocessing import StandardScaler
-        from xgboost import XGBClassifier
     except ImportError as error:
         raise RuntimeError(
             "ML dependencies are missing; install with: pip install -e '.[ml]'"
@@ -108,35 +148,17 @@ def train_models(
     positives = int(y_train.sum())
     negatives = len(y_train) - positives
     scale_pos_weight = negatives / max(positives, 1)
-    models = {
-        "logistic_regression": make_pipeline(
-            StandardScaler(),
-            LogisticRegression(
-                class_weight="balanced",
-                max_iter=2000,
-                random_state=seed,
-            ),
-        ),
-        "random_forest": RandomForestClassifier(
-            n_estimators=400,
-            min_samples_leaf=2,
-            class_weight="balanced_subsample",
-            n_jobs=-1,
-            random_state=seed,
-        ),
-        "xgboost": XGBClassifier(
-            n_estimators=350,
-            max_depth=5,
-            learning_rate=0.05,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            reg_lambda=2.0,
-            scale_pos_weight=scale_pos_weight,
-            eval_metric="logloss",
-            n_jobs=-1,
-            random_state=seed,
-        ),
-    }
+    try:
+        models = {
+            name: build_candidate_model(
+                name, seed=seed, scale_pos_weight=scale_pos_weight
+            )
+            for name in CANDIDATE_MODELS
+        }
+    except ImportError as error:
+        raise RuntimeError(
+            "ML dependencies are missing; install with: pip install -e '.[ml]'"
+        ) from error
 
     output_directory.mkdir(parents=True, exist_ok=True)
     model_reports: dict[str, Any] = {}

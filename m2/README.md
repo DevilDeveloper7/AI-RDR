@@ -121,6 +121,20 @@ Results are written to `artifacts/models/evaluation.json` and
 dataset-shortcut limitation are documented in `docs/MODEL_DOCUMENTATION.md`;
 the predefined acceptance policy is in `docs/EVALUATION_CRITERIA.md`.
 
+## Evaluate robustness
+
+Repeated run-grouped cross-validation, unseen encryption-scenario tests, SHAP
+faithfulness checks and a false-alert projection take about four minutes:
+
+```bash
+bash scripts/evaluate_robustness.sh
+```
+
+On Linux with OpenMP installed, run `ai-rdr-m2 robustness` with the feature
+file, the model artifact and an output directory. Results are written to
+`artifacts/robustness/robustness.json` and summarised in
+`docs/EVALUATION_CRITERIA.md`.
+
 ## Run the inference API
 
 ```bash

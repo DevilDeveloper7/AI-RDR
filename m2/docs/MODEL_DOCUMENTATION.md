@@ -146,6 +146,17 @@ still leaves Random Forest and XGBoost perfect on the same test split.
 therefore strengthens the need for external validation rather than proving the
 model is robust.
 
+## Robustness evaluation
+
+Ten repetitions of five-fold run-grouped cross-validation show that the
+single-split perfect score was favourable. Random Forest alerts on about 7% of
+benign runs on average, mostly filebench file-server runs, and the precision
+target is not demonstrated by its one-sided 95% bound. No ransomware run is
+missed, including runs of an encryption scenario held out from training.
+Results, threshold trade-offs and explained errors are in
+`docs/EVALUATION_CRITERIA.md`; raw output is in
+`artifacts/robustness/robustness.json`.
+
 ## Explainability result
 
 TreeSHAP was calculated on all 335 held-out test windows for the selected
@@ -158,7 +169,8 @@ The attribution pattern reinforces the shortcut warning: process concentration
 is more influential than direct write/encryption behaviour. The report includes
 local true-positive and true-negative explanations. No selected-model false
 positive or false negative existed in this split, so those example fields are
-explicitly null rather than fabricated.
+explicitly null rather than fabricated. False positives and false negatives
+from cross-validation are explained in the robustness report.
 
 ## False-positive controls
 
