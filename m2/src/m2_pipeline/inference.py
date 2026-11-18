@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import time
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from .features import extract_window_features
 from .schema import NormalizedEvent
@@ -107,8 +109,24 @@ class InferenceService:
             event_count=len(ordered),
             events=ordered,
         )
-        features = extract_window_features(window)
-        vector = [[float(features[name]) for name in self.feature_names]]
+        return self.predict_features(extract_window_features(window), top_k=top_k)
+
+    def predict_features(
+        self,
+        features: Mapping[str, Any],
+        *,
+        top_k: int = 8,
+    ) -> InferenceResult:
+        """Score one precomputed window row, e.g. from the stream aggregator."""
+        missing = [name for name in self.feature_names if name not in features]
+        if missing:
+            raise ValueError(f"Missing model features: {', '.join(missing)}")
+        try:
+            vector = [[float(features[name]) for name in self.feature_names]]
+        except (TypeError, ValueError) as error:
+            raise ValueError("Feature values must be numbers") from error
+        if not all(math.isfinite(value) for value in vector[0]):
+            raise ValueError("Feature values must be finite")
 
         started = time.perf_counter()
         probability = float(self.model.predict_proba(vector)[0][1])
@@ -131,7 +149,7 @@ class InferenceService:
     def _explain(
         self,
         vector: list[list[float]],
-        features: dict[str, Any],
+        features: Mapping[str, Any],
         top_k: int,
     ) -> tuple[dict[str, Any], ...]:
         if self._explainer is None:

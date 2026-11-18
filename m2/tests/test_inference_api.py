@@ -57,3 +57,40 @@ def test_model_metadata_and_input_validation() -> None:
     assert metadata.status_code == 200
     assert metadata.json()["features"] == ["event_count"]
     assert invalid.status_code == 422
+
+
+WINDOW_ROW = {
+    "host": "web-01",
+    "start": 0.0,
+    "end": 5.0,
+    "feature_version": "test",
+    "features": {"event_count": 4},
+}
+
+
+def test_predict_window_scores_an_aggregated_row() -> None:
+    client = TestClient(create_app(service()))
+
+    response = client.post("/v1/predict/window", json=WINDOW_ROW)
+
+    assert response.status_code == 200
+    result = response.json()
+    assert (result["host"], result["start"], result["end"]) == ("web-01", 0.0, 5.0)
+    assert len(result["window_id"]) == 20
+    assert result["alert"] is True
+    assert result["response_mode"] == "alert_only"
+
+
+def test_predict_window_rejects_schema_drift() -> None:
+    client = TestClient(create_app(service()))
+    drifted = [
+        {**WINDOW_ROW, "feature_version": "0.9"},
+        {**WINDOW_ROW, "features": {"write_count": 4}},
+        {**WINDOW_ROW, "features": {"event_count": "many"}},
+        {**WINDOW_ROW, "end": 0.0},
+        {**WINDOW_ROW, "pid": 10},
+    ]
+
+    responses = [client.post("/v1/predict/window", json=row) for row in drifted]
+
+    assert [response.status_code for response in responses] == [422] * len(drifted)

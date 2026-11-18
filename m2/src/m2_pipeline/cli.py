@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import sys
 from collections import Counter
@@ -8,10 +9,14 @@ from pathlib import Path
 from typing import Any
 
 from .features import FeatureGenerationConfig, generate_feature_file
+from .inference import InferenceService
 from .io import discover_trace_files, iter_normalized_runs
 from .robustness import evaluate_robustness
+from .streaming import score_falco_stream
 from .training import train_models
 from .windowing import SlidingWindowConfig, iter_run_windows
+
+DEFAULT_MODEL_PATH = Path("artifacts/models/random_forest.joblib")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -83,6 +88,30 @@ def build_parser() -> argparse.ArgumentParser:
     robustness.add_argument("--seed", type=int, default=321)
     robustness.add_argument("--repetitions", type=int, default=10)
     robustness.add_argument("--folds", type=int, default=5)
+
+    stream = subparsers.add_parser(
+        "stream",
+        help=(
+            "Aggregate Falco JSON output into host-wide windows and print one "
+            "alert-only score per window as JSON Lines"
+        ),
+    )
+    stream.add_argument(
+        "input", type=Path, nargs="?", help="Falco JSON Lines file; stdin by default"
+    )
+    stream.add_argument("--model", type=Path, default=DEFAULT_MODEL_PATH)
+    stream.add_argument(
+        "--host", default="unknown-host", help="Host for events without a hostname"
+    )
+    stream.add_argument("--size", type=float, default=5.0)
+    stream.add_argument("--min-events", type=int, default=2)
+    stream.add_argument(
+        "--lateness",
+        type=float,
+        default=5.0,
+        help="Seconds other hosts must be past a quiet host's window before it closes",
+    )
+    stream.add_argument("--top-k", type=int, default=8)
     return parser
 
 
@@ -198,10 +227,33 @@ def preprocess_dataset(args: argparse.Namespace) -> dict[str, Any]:
     return report
 
 
+def stream_falco(args: argparse.Namespace) -> dict[str, int]:
+    if not args.model.exists():
+        raise ValueError(f"Model artifact not found: {args.model}")
+    service = InferenceService.from_path(args.model)
+    options = {
+        "default_host": args.host,
+        "size": args.size,
+        "min_events": args.min_events,
+        "lateness": args.lateness,
+        "top_k": args.top_k,
+    }
+    if args.input is None:
+        lines = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace")
+        return score_falco_stream(lines, service, sys.stdout, **options)
+    with args.input.open(encoding="utf-8", errors="replace") as lines:
+        return score_falco_stream(lines, service, sys.stdout, **options)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        if args.command == "stream":
+            # stdout carries one JSON line per window, so the summary goes to stderr.
+            json.dump(stream_falco(args), sys.stderr)
+            sys.stderr.write("\n")
+            return 0
         if args.command == "inspect":
             result = inspect_dataset(args.input, args.source, args.max_runs)
         elif args.command == "preprocess":

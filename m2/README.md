@@ -145,7 +145,23 @@ The default artifact is `artifacts/models/random_forest.joblib`; override it
 with `AI_RDR_MODEL_PATH`. API documentation is served at
 `http://127.0.0.1:8000/docs`.
 
-The service exposes `/health`, `/v1/model` and `/v1/predict`. Predictions
-include probability, selected threshold and local SHAP contributors. The
-current response mode is intentionally `alert_only`, not automatic blocking.
-See `docs/M2_API_CONTRACT.md` and `docs/WEEK_4_REPORT.md`.
+The service exposes `/health`, `/v1/model`, `/v1/predict` and
+`/v1/predict/window`. Predictions include probability, selected threshold and
+local SHAP contributors. The current response mode is intentionally
+`alert_only`, not automatic blocking. See `docs/M2_API_CONTRACT.md` and
+`docs/WEEK_4_REPORT.md`.
+
+## Score a live Falco stream
+
+Raw syscall events do not need to reach the model one by one. The stream
+command folds them into host-wide five-second windows and scores each window
+once:
+
+```bash
+falco -o json_output=true | ai-rdr-m2 stream --model artifacts/models/random_forest.joblib
+```
+
+Each closed window produces one JSON line on stdout with the alert-only
+verdict, SHAP evidence and the 31 features; a summary goes to stderr. The rows
+are identical to the batch features used in training. Falco requirements and
+the `/v1/predict/window` alternative are in `docs/M2_API_CONTRACT.md`.
