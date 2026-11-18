@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .inference import InferenceService
 from .schema import NormalizedEvent
+from .streaming import stream_window_id
 
 DEFAULT_MODEL_PATH = Path("artifacts/models/random_forest.joblib")
 
@@ -52,6 +53,25 @@ class PredictionResponse(BaseModel):
     feature_version: str
     inference_ms: float
     explanation: list[ExplanationItem]
+
+
+class WindowPredictionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    window_id: str | None = None
+    host: str = Field(min_length=1)
+    start: float
+    end: float
+    feature_version: str = Field(min_length=1)
+    top_k: int = Field(default=8, ge=1, le=31)
+    features: dict[str, float] = Field(min_length=1)
+
+
+class WindowPredictionResponse(PredictionResponse):
+    window_id: str
+    host: str
+    start: float
+    end: float
 
 
 def create_app(service: InferenceService | None = None) -> FastAPI:
@@ -126,6 +146,34 @@ def create_app(service: InferenceService | None = None) -> FastAPI:
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
         return result.to_dict()
+
+    @app.post("/v1/predict/window", response_model=WindowPredictionResponse)
+    def predict_window(
+        request: WindowPredictionRequest,
+        current: InferenceService = Depends(get_service),
+    ) -> dict:
+        if request.feature_version != current.feature_version:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"feature_version {request.feature_version} does not match "
+                    f"model feature_version {current.feature_version}"
+                ),
+            )
+        if request.end <= request.start:
+            raise HTTPException(status_code=422, detail="end must be after start")
+        try:
+            result = current.predict_features(request.features, top_k=request.top_k)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        return {
+            "window_id": request.window_id
+            or stream_window_id(request.host, request.start, request.end),
+            "host": request.host,
+            "start": request.start,
+            "end": request.end,
+            **result.to_dict(),
+        }
 
     return app
 
