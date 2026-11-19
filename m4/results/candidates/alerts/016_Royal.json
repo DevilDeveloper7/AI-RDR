@@ -1,0 +1,18 @@
+{
+  "id": "replay-016",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: Royal)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_016",
+    "event": "added",
+    "sha256_after": "b64acb7dcc968b9a3a4909e3fddc2e116408c50079bba7678e85fee82995b0f4"
+  },
+  "data": {}
+}

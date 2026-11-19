@@ -42,6 +42,24 @@ class ExtractTests(unittest.TestCase):
         alert = {"data": {"srcip": "10.0.0.5", "dstip": "8.8.4.4"}}
         self.assertEqual(integ.extract_indicators(alert), [("ip", "8.8.4.4")])
 
+    # SYNTHETIC Falco-in-Wazuh shapes (paths UNVERIFIED until a real Falco line arrives).
+    def test_falco_dotted_keys(self):
+        alert = {"id": "2", "data": {"rule": "Outbound connection",
+                                     "output_fields": {"fd.sip": "192.168.56.10", "fd.rip": "185.220.101.47"}}}
+        self.assertEqual(integ.extract_indicators(alert), [("ip", "185.220.101.47")])
+
+    def test_falco_nested_keys(self):
+        alert = {"id": "3", "data": {"output_fields": {"fd": {"rip": "8.8.8.8", "sip": "10.1.1.1"}}}}
+        self.assertEqual(integ.extract_indicators(alert), [("ip", "8.8.8.8")])
+
+    def test_duplicate_ip_sent_once(self):
+        alert = {"data": {"dstip": "8.8.8.8", "output_fields": {"fd.rip": "8.8.8.8"}}}
+        self.assertEqual(integ.extract_indicators(alert), [("ip", "8.8.8.8")])
+
+    def test_get_path_handles_non_dict(self):
+        self.assertIsNone(integ.get_path({"data": "x"}, "data.output_fields.fd.rip"))
+        self.assertIsNone(integ.get_path({"data": {"output_fields": {"fd": 5}}}, "data.output_fields.fd.rip"))
+
 
 class ProcessAlertTests(unittest.TestCase):
     def setUp(self):

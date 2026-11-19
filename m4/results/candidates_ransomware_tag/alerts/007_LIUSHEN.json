@@ -1,0 +1,18 @@
+{
+  "id": "replay-007",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: LIUSHEN)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_007",
+    "event": "added",
+    "sha256_after": "370d36a89f8ffa291fd22c40dda78fd6154078b2e2b4b100d5c2429135e4aa72"
+  },
+  "data": {}
+}

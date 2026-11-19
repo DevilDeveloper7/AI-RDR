@@ -1,0 +1,18 @@
+{
+  "id": "replay-012",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: INC)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_012",
+    "event": "added",
+    "sha256_after": "0315dbb793f855f154aa8d227151f1098bd9b580a4f85064648b85bac1321663"
+  },
+  "data": {}
+}

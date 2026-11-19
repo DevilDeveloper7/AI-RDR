@@ -5,11 +5,15 @@
 2. Show that M4 is robust: provider failures, slow services, bad data and M4 outages never break alert handling.
 3. Plan the Week 7 measurements of M4's usefulness, with pass criteria to be agreed.
 
+Status (2026-11-19): **all tests implemented and passing** (170 tests, `OK`, run on the student's Mac).
+
 ## How to run
 ```bash
-.venv/bin/python -W error::ResourceWarning -m unittest discover -s tests -t . -v
-.venv/bin/python scripts/e2e_smoke.py        # end-to-end, MOCK providers
+python3 -m unittest discover -s tests -t .           # 170 offline tests (needs -t .)
+python3 scripts/e2e_demo.py                          # Wazuh script -> M4 -> M5 -> M6, MOCK providers
+python3 scripts/e2e_demo.py --live http://127.0.0.1:5004 --alert results/candidates/alerts/001_Akira.json
 ```
+The 4 M5 cross-checks in `test_m5_adapter` are skipped when `../m5` is not beside `m4`.
 
 ## Test inventory (requirement → tests)
 | Requirement | Tests (file → test names) |
@@ -27,23 +31,31 @@
 | Provider parsing | `test_abusech` (17 tests), `test_otx` (10 tests) |
 | Rate limit / retry | `test_ratelimit` (14 tests): burst, throttle, refill, timeout, backoff, Retry-After, give-up, no retry on 401/403 |
 | Cache | `test_cache`: TTL, purge, stats, thread safety, 2nd lookup = zero provider calls, current alert_id |
-| Integration | `test_integration` (Wazuh script and M5 client) · `scripts/e2e_smoke.py` |
+| Integration | `test_integration` (Wazuh script and M5 client; incl. Falco-style dotted keys `falco_dotted_keys`, `falco_nested_keys`, `duplicate_ip_sent_once`) · `scripts/e2e_smoke.py`, `scripts/e2e_demo.py` |
+| Circuit breaker | `test_resilience`: opens_after_two_network_failures_and_stops_calling_the_provider, closes_after_the_cooldown_and_a_good_answer_resets_it, http_errors_and_misses_do_not_open_it, only_consecutive_failures_count, unsupported_type_is_not_counted, breaker_can_be_switched_off, stats_show_skipped_providers |
+| Cache fallback | `test_resilience`: unwritable_cache_folder_does_not_stop_m4 (M4 runs with `cache=None`, `/stats` shows `cache: null`) |
+| M5 adapter (`/enrich/m5`, `enrich_for_m5`) | `test_m5_adapter` (34 tests): malicious_hash_is_a_match, malicious_ip_is_a_match, non_malicious_verdicts_are_no_match_never_a_match, unknown_with_error_is_unavailable_not_no_match, types_m5_cannot_use_return_none, synthetic_is_never_a_match_by_default, checked_at_is_original_enriched_at_and_aware, cached_hit_keeps_original_checked_at, unsupported_types_are_422, m4_down_gives_unavailable, timeout_gives_unavailable, and cross-checks against the real `RiskMatrix`: fresh_match_counts_with_weight_55, freshness_boundaries, boundaries_agree_with_the_mirror, no_match_unavailable_and_synthetic_never_score |
+| M6 adapter (`/enrich/m6`, `/indicators`) | `test_m6_adapter` (20 tests): every_verdict, status_enriched_no_data_unavailable, unknown_is_never_presented_as_clean, mock_data_is_labelled, m6_own_lookup_is_not_a_related_alert, newest_first_dedupe_and_cap, indicators_lists_recent_answers_newest_first, limit_validation, enrich_m6_bad_input_is_400 |
+| Per-alert endpoint (`/alerts/<id>/threat_intel`) | `test_alert_records`: records_for_one_alert_only_and_accepted_by_m5, md5_sha1_and_domain_are_left_out, unknown_alert_gives_an_empty_list_not_an_error · client `threat_intel_for_alert`: returns_records, never_raises |
+| Real provider formats | `test_live_fixtures` (recorded real abuse.ch answer, `tests/fixtures/abusech_live_2026-10-18.json`) |
 
-## Planned Week 7 measurements (live, with real keys, lab network)
-| Measurement | Method | Pass criterion |
-|---|---|---|
-| Detection rate on known-bad hashes | Labelled set of SHA-256s of **known public samples** (hashes only, from public reports/MalwareBazaar listings; no downloads), sent through M4 | **TO BE DECIDED by Kiana with supervisor** |
-| False-positive rate | Hashes of benign files (e.g. Ubuntu system binaries) and popular benign domains: share of `malicious`/`suspicious` | **TO BE DECIDED** |
-| Lab-sample coverage | Share of the lab's own ransomware-simulation artefacts found in any feed (expected to be low: novel samples are not in public feeds) | Report only |
-| Latency | `latency_ms` p50/p95 for uncached and cached lookups | **TO BE DECIDED** |
-| Cache hit rate | `/stats` over a replayed alert stream | Report only |
-| Robustness | Kill M4 / block the network during an alert replay; check Wazuh and M5 keep working | Must not break alert handling |
+## Measurements (implemented; live, real keys)
+| Measurement | Method | Result | Evidence |
+|---|---|---|---|
+| Detection rate on known-bad hashes | 25 SHA-256s of public ransomware samples (MalwareBazaar metadata only, no downloads) through `scripts/evaluate_http.py` | 100% (25/25). Note: taken from MalwareBazaar itself, so this checks the pipeline, not real-world coverage | `results/summary.md`, `results/results.csv` |
+| False-positive rate | 25 benign hashes / domains | 0% (0/25) | `results/summary.md` |
+| Lab-sample coverage | Lab's own simulator artefacts | n/a (no lab artefacts yet); expected low, novel samples are not in feeds | `results/summary.md` |
+| Latency | `latency_ms`, cold vs cached | cold mean 2070 ms, p95 3076 ms; cached mean 1.9 ms | `results/summary.md` |
+| Cache hit rate | warm second pass | 100% | `results/summary.md` |
+| End-to-end, mock | `scripts/e2e_demo.py` | ALL CHECKS PASSED (Wazuh script, M4, M5 scoring 55, M6 listing) | `results/e2e_demo_output.txt` (MOCK-DATA) |
+| End-to-end, live replay of real ELF ransomware hashes | `scripts/pick_samples.py --m4` then `e2e_demo.py --live` for Akira and LockBit ELF hashes | Both `malicious` (score 95, MalwareBazaar), M5 `ti_match=55`, M6 shows Malicious | `results/candidates/`, `results/e2e_live_output.txt` |
+| Robustness | No internet / provider down | `unknown` + error, breaker skips the provider, never `clean` (unit tests above) | `test_resilience`, `test_app` |
 
-The labelled set goes in `data/labelled.csv` (git-ignored). Results go in `results/` (git-ignored).
+Pass criteria for detection / false-positive / latency were not fixed by the supervisor; the numbers are reported as measured.
 
 ## Risks
-- abuse.ch format details are UNVERIFIED (`docs/api_notes.md`). A mismatch shows up as `unknown` + error, not as wrong verdicts. Fix it with one real curl run.
+- abuse.ch formats were verified with real keys (2026-10-18 fixture, 2026-11-19 live runs). A future format change shows up as `unknown` + error, not as wrong verdicts.
 - Free-tier rate limits and terms can change. M4 throttles itself conservatively.
 - Low coverage on novel or lab ransomware is expected. M4 is context, not detection.
-- The Wazuh field names for IPs are unconfirmed, and the integration hasn't been run on the real manager yet.
+- The Wazuh field names for `sha256_after` and for IPs (Wazuh `data.srcip`/`dstip`, Falco `output_fields.fd.rip`/`fd.sip`) are still UNVERIFIED: no real lab alert yet. The integration has not been run on the real manager yet.
 - M4 has no authentication and must stay on localhost or the isolated lab network.

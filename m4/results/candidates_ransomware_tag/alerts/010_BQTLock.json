@@ -1,0 +1,18 @@
+{
+  "id": "replay-010",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: BQTLock)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_010",
+    "event": "added",
+    "sha256_after": "4525387f28bee6bb48d07e6989319f382447a8a6e48ae11f332dee9916feb8cc"
+  },
+  "data": {}
+}

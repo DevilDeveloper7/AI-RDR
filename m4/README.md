@@ -10,14 +10,14 @@ by M2 (ML) and M3 (honey files).
 ## Quick start
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m unittest discover -s tests -t .        # 94 offline tests
+.venv/bin/python -m unittest discover -s tests -t .        # 170 offline tests
 
 # Demo without keys (fake data, clearly labelled MOCK):
 M4_MOCK_PROVIDERS=1 .venv/bin/python -m m4_threat_intel.app
-.venv/bin/python scripts/e2e_smoke.py
+.venv/bin/python scripts/e2e_demo.py                     # Wazuh -> M4 -> M5 -> M6, mock
 
 # Real use:
-cp .env.example .env      # add ABUSECH_AUTH_KEY and OTX_API_KEY; never commit .env
+# create .env with ABUSECH_AUTH_KEY=... and OTX_API_KEY=...; never commit .env
 set -a; . ./.env; set +a
 .venv/bin/python -m m4_threat_intel.app                    # http://127.0.0.1:5004
 ```
@@ -28,9 +28,13 @@ set -a; . ./.env; set +a
 | POST | `/enrich` | synchronous lookup → contract response |
 | POST | `/enrich/async` | 202 + `job_id`; use this from the alert path |
 | GET | `/enrich/jobs/<job_id>` | `pending` / `done` / `failed` + result |
-| GET | `/health`, `/stats` | liveness, and cache/job counters |
+| POST | `/enrich/m5` | one M5 `threat_intel` record (sha256 / ip only, else 422) |
+| POST | `/enrich/m6` | one M6 INDICATOR |
+| GET | `/alerts/<alert_id>/threat_intel` | M5 records for everything enriched for that alert |
+| GET | `/indicators` | recent answers for the M6 panel (max 500, in memory) |
+| GET | `/health`, `/stats` | liveness, cache/job counters, providers skipped by the breaker |
 
-Contract: `docs/interface_contract.md`.
+Contract: `docs/interface_contract.md`. Results and limitations: `docs/results_and_limitations.md`.
 
 ## Layout
 | Path | What |

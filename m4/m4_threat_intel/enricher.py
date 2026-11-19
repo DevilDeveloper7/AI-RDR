@@ -18,7 +18,7 @@ from .cache import Cache
 from .config import MALICIOUS_THRESHOLD, OTX_MAX_SCORE, SUSPICIOUS_THRESHOLD
 from .providers.base import Provider
 from .schema import (
-    STATUS_HIT, VERDICT_CLEAN, VERDICT_MALICIOUS, VERDICT_SUSPICIOUS, VERDICT_UNKNOWN,
+    STATUS_ERROR, STATUS_HIT, VERDICT_CLEAN, VERDICT_MALICIOUS, VERDICT_SUSPICIOUS, VERDICT_UNKNOWN,
     ProviderResult, is_non_routable, normalize,
 )
 
@@ -68,7 +68,7 @@ def _hit_sources(result: ProviderResult) -> List[str]:
 class Enricher:
     def __init__(self, primary: Provider, secondary: Optional[Provider] = None,
                  allowlist: Optional[Allowlist] = None, cache: Optional[Cache] = None,
-                 ttl_hit: int = 600, ttl_miss: int = 300, recent=None):
+                 ttl_hit: int = 600, ttl_miss: int = 300, recent=None, breaker=None):
         self.primary = primary
         self.secondary = secondary
         self.allowlist = allowlist or Allowlist()
@@ -76,6 +76,7 @@ class Enricher:
         self.ttl_hit = ttl_hit
         self.ttl_miss = ttl_miss
         self.recent = recent          # optional RecentLog (answers listed to M6)
+        self.breaker = breaker        # optional ProviderBreaker (skip unreachable providers)
 
     def enrich(self, alert_id: str, ioc_type: str, value: str) -> Dict[str, Any]:
         started = time.perf_counter()
@@ -114,9 +115,15 @@ class Enricher:
         core["enriched_at"] = _now()
         return core
 
-    @staticmethod
-    def _ask(provider: Provider, ioc_type: str, value: str) -> ProviderResult:
+    def _ask(self, provider: Provider, ioc_type: str, value: str) -> ProviderResult:
+        if self.breaker is not None and provider.supports(ioc_type):
+            reason = self.breaker.skip_reason(provider.name)
+            if reason:
+                return ProviderResult(provider=provider.name, status=STATUS_ERROR, error=reason,
+                                      context_only=provider.context_only)
         result = provider.lookup(ioc_type, value)   # never raises (base class)
+        if self.breaker is not None and provider.supports(ioc_type):
+            self.breaker.record(provider.name, result)
         # Taken from the provider class, so a result cannot claim otherwise.
         result.context_only = provider.context_only
         return result

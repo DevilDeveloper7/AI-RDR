@@ -36,6 +36,11 @@ class RecentLog:
             out = [dict(v) for v in reversed(self._items.values())]
         return out[:limit] if limit else out
 
+    def for_alert(self, alert_id: str) -> List[Dict[str, Any]]:
+        """Newest first, only the answers that were asked for this alert id."""
+        with self._lock:
+            return [dict(v) for k, v in reversed(self._items.items()) if k[0] == alert_id]
+
     def __len__(self) -> int:
         with self._lock:
             return len(self._items)

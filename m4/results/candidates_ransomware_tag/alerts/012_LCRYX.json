@@ -1,0 +1,18 @@
+{
+  "id": "replay-012",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: LCRYX)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_012",
+    "event": "added",
+    "sha256_after": "9e65acc172956753a6ea282837c47d9af769238a895c6a743f96fccf0630c11e"
+  },
+  "data": {}
+}

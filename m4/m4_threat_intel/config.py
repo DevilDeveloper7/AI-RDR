@@ -64,6 +64,10 @@ class Settings:
     otx_burst: int = 2
     rate_max_wait: float = 10.0         # give up if no token within this time
 
+    # Skip a provider after repeated network failures (0 cooldown = off)
+    breaker_threshold: int = 2
+    breaker_cooldown: float = 30.0
+
     # Cache
     cache_path: str = "m4_cache.sqlite3"
     ttl_hit: int = 600            # found (malicious/suspicious)
@@ -93,6 +97,8 @@ class Settings:
             otx_rate=_float("M4_OTX_RATE", d.otx_rate),
             otx_burst=_int("M4_OTX_BURST", d.otx_burst),
             rate_max_wait=_float("M4_RATE_MAX_WAIT", d.rate_max_wait),
+            breaker_threshold=_int("M4_BREAKER_THRESHOLD", d.breaker_threshold),
+            breaker_cooldown=_float("M4_BREAKER_COOLDOWN", d.breaker_cooldown),
             cache_path=_str("M4_CACHE_PATH", d.cache_path),
             ttl_hit=_int("M4_TTL_HIT", d.ttl_hit),
             ttl_miss=_int("M4_TTL_MISS", d.ttl_miss),

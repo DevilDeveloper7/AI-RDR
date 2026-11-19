@@ -4,6 +4,8 @@ POST /enrich               synchronous lookup -> contract response (tests/demos)
 POST /enrich/m5            same lookup, answered as the M5 `threat_intel` record
                            (200 record | 422 type M5 cannot use: md5/sha1/domain)
 POST /enrich/m6            same lookup, answered as the M6 indicator record
+GET  /alerts/<id>/threat_intel  M5 records for the indicators enriched for that alert id
+                           (what the Wazuh script queued; put "records" into the bundle)
 GET  /indicators           recent answers as M6 indicator records, newest first
                            (?limit=N, 1..500; empty after a restart)
 POST /enrich/async         validate now, 202 {"job_id"}; lookup in background
@@ -12,11 +14,14 @@ GET  /health               liveness + whether keys are set (never the keys)
 GET  /stats                cache and job counters
 """
 import os
+import sqlite3
+import sys
 from typing import Optional
 
 from flask import Flask, jsonify, request, url_for
 
 from .allowlist import Allowlist
+from .breaker import ProviderBreaker
 from .cache import Cache
 from .config import Settings
 from .enricher import Enricher
@@ -48,10 +53,19 @@ def build_enricher(settings: Settings, mock: bool = False) -> Enricher:
                                   _http_client(settings, settings.abusech_rate, settings.abusech_burst))
         secondary = OTXProvider(settings.otx_api_key,
                                 _http_client(settings, settings.otx_rate, settings.otx_burst))
+    try:
+        cache = Cache(settings.cache_path)
+    except (sqlite3.Error, OSError) as exc:
+        # An unwritable folder must not stop M4 (it would only be slower without the cache).
+        print(f"M4 warning: cache disabled, cannot open {settings.cache_path!r} ({type(exc).__name__}). "
+              "Set M4_CACHE_PATH to a writable file.", file=sys.stderr)
+        cache = None
+    breaker = (ProviderBreaker(settings.breaker_threshold, settings.breaker_cooldown)
+               if settings.breaker_cooldown > 0 else None)
     return Enricher(primary, secondary,
                     allowlist=Allowlist.from_file(settings.allowlist_path),
-                    cache=Cache(settings.cache_path),
-                    ttl_hit=settings.ttl_hit, ttl_miss=settings.ttl_miss, recent=RecentLog())
+                    cache=cache, ttl_hit=settings.ttl_hit, ttl_miss=settings.ttl_miss,
+                    recent=RecentLog(), breaker=breaker)
 
 
 def create_app(settings: Optional[Settings] = None, enricher: Optional[Enricher] = None,
@@ -104,6 +118,18 @@ def create_app(settings: Optional[Settings] = None, enricher: Optional[Enricher]
             return jsonify(error=str(exc)), 400
         return jsonify(to_m6_indicator(enricher.enrich(alert_id, ioc_type, value)))
 
+    @app.get("/alerts/<alert_id>/threat_intel")
+    def alert_threat_intel(alert_id):
+        recent = getattr(enricher, "recent", None)
+        records = []
+        for result in (recent.for_alert(alert_id) if recent else []):
+            record = to_m5_record(result, allow_synthetic=mock)
+            if record is not None:                 # md5 / sha1 / domain: M5 cannot use them
+                if mock:
+                    record["synthetic"] = True
+                records.append(record)
+        return jsonify(alert_id=alert_id, records=records)
+
     @app.get("/indicators")
     def indicators():
         try:
@@ -137,7 +163,9 @@ def create_app(settings: Optional[Settings] = None, enricher: Optional[Enricher]
     @app.get("/stats")
     def stats():
         cache = enricher.cache.stats() if enricher.cache else None
-        return jsonify(cache=cache, jobs=jobs.stats())
+        breaker = getattr(enricher, "breaker", None)
+        return jsonify(cache=cache, jobs=jobs.stats(),
+                       skipped_providers=breaker.stats() if breaker else {})
 
     return app
 

@@ -1,11 +1,27 @@
 # Using M4 from M5 (response/case manager) and M6 (dashboard)
 
-M6 has not yet specified its format, so it is assumed to consume the agreed
-contract response unchanged (`docs/interface_contract.md`). M5 has a fixed
-`threat_intel` record format (`m5/ai_rdr_risk.py`); see "M5 record" below.
-**Confirm with both teammates.**
+Status (2026-11-19): both adapters are implemented and tested.
+M5 has a fixed `threat_intel` record format (`m5/ai_rdr_risk.py`); M4 produces it
+(`m4_threat_intel/m5_adapter.py`) and is checked against M5's real `RiskMatrix`.
+M6 defined its INDICATOR shape (`m6/backend/app/integrations/contracts.py`) and its
+owner wrote the `RealM4` client himself; M4 answers in that shape
+(`m4_threat_intel/m6_adapter.py`). Both paths were run end to end with
+`scripts/e2e_demo.py` (mock and live; see `results/`).
 
 ## M5
+
+### Recommended: per-alert records (what M5's bundle builder should call)
+The Wazuh integration script queues every sha256 / public IP of an alert with
+`POST /enrich/async` under the alert's id. M5's bundle builder then asks once:
+```python
+from m4_threat_intel.m4_client import threat_intel_for_alert
+bundle["threat_intel"] = threat_intel_for_alert(alert_id, timeout=5)   # list of M5 records
+```
+It calls `GET /alerts/<alert_id>/threat_intel` and never raises: `[]` if M4 is down
+or has nothing yet (M5 then simply has no TI evidence). md5/sha1/domain are left out.
+**Open item for the M5 owner:** this call is not yet in M5's bundle builder.
+
+### Direct lookup
 Use `m4_threat_intel/m4_client.py`:
 ```python
 from m4_threat_intel.m4_client import enrich

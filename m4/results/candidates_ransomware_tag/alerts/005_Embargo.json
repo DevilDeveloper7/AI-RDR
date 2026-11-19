@@ -1,0 +1,18 @@
+{
+  "id": "replay-005",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: Embargo)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_005",
+    "event": "added",
+    "sha256_after": "f4ec2dba070a9ecd1dee342329b0cd7caa406cd4995c41b9aab9aea9b73cd06d"
+  },
+  "data": {}
+}

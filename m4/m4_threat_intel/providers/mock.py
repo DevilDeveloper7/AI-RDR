@@ -6,6 +6,7 @@ canned answers from data/mock_iocs.json. Every result is labelled
 threat intelligence.
 """
 import json
+import os
 from typing import Dict, Optional
 
 from ..schema import STATUS_HIT, STATUS_MISS, ProviderResult
@@ -34,7 +35,10 @@ class MockProvider(Provider):
 def load_mock_providers(path: Optional[str] = None):
     """(primary, secondary) mock providers from a JSON file:
     {"abusech": {"hash": {"<sha256>": 95}}, "otx": {"domain": {"x.example": 40}}}"""
-    with open(path or "data/mock_iocs.json", encoding="utf-8") as fh:
+    # Default file sits next to the package, so M4 starts from any working directory.
+    path = path or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__)))), "data", "mock_iocs.json")
+    with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
     return (MockProvider("mock_abusech", data.get("abusech", {})),
             MockProvider("mock_otx", data.get("otx", {}), context_only=True))
