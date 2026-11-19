@@ -1,0 +1,18 @@
+{
+  "id": "replay-004",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: CRPx0)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_004",
+    "event": "added",
+    "sha256_after": "ef431e36a8ac12051af588d800e1d8128d583a9d4c68187709263a13564081cd"
+  },
+  "data": {}
+}

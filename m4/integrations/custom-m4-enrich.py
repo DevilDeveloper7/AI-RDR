@@ -23,16 +23,25 @@ import urllib.request
 
 # ---------------------------------------------------------------------------
 # FIELD ADAPTER: where indicators live inside a Wazuh alert.
+# Status on 2026-11-19: no real alert from the lab has been seen yet, so the
+# paths marked UNVERIFIED are best guesses. The script stays fail-safe: a
+# wrong path simply extracts nothing (and only public IPs are ever sent).
 #   syscheck.md5_after / syscheck.sha1_after: confirmed (Wazuh's virustotal.py)
 #   syscheck.sha256_after: inferred (decoder field "sha256" + the same
-#       "_after" pattern). UNVERIFIED: confirm with a real FIM alert from M1.
-#   IP paths: TODO / UNVERIFIED. Replace with the real field names from
-#       M1's sample network alert. Nothing is extracted until confirmed paths
-#       produce a value.
+#       "_after" pattern). UNVERIFIED: confirm with a real FIM alert (Vadim).
+#   data.srcip / data.dstip: Wazuh's standard static decoder fields.
+#       UNVERIFIED for our lab's network events.
+#   data.output_fields.fd.rip / fd.sip: Falco JSON events forwarded into Wazuh
+#       and decoded by the JSON decoder. Falco's field names contain dots
+#       ("fd.rip"), so get_path() accepts both {"fd": {"rip": ..}} and
+#       {"fd.rip": ..}. UNVERIFIED: confirm with one real Falco network line.
+# When a real alert arrives: run extract_indicators() on it, fix the paths
+# here, and save it under tests/fixtures/ (see tests/test_integration.py).
 # ---------------------------------------------------------------------------
 FIELD_PATHS = {
     "hash": ["syscheck.sha256_after", "syscheck.sha1_after", "syscheck.md5_after"],
-    "ip": ["data.srcip", "data.dstip"],   # TODO: UNVERIFIED, confirm with M1
+    "ip": ["data.srcip", "data.dstip",                               # UNVERIFIED
+           "data.output_fields.fd.rip", "data.output_fields.fd.sip"],  # UNVERIFIED (Falco)
 }
 ALERT_ID_PATH = "id"                      # confirmed (virustotal.py uses alert['id'])
 
@@ -52,11 +61,20 @@ def log(message, log_file=None):
 
 
 def get_path(alert, dotted):
-    node = alert
-    for part in dotted.split("."):
-        if not isinstance(node, dict) or part not in node:
+    """Follow a dotted path. Keys that themselves contain dots (Falco's
+    "fd.rip") are matched too: at each level the longest literal key wins."""
+    parts = dotted.split(".")
+    node, i = alert, 0
+    while i < len(parts):
+        if not isinstance(node, dict):
             return None
-        node = node[part]
+        for j in range(len(parts), i, -1):
+            key = ".".join(parts[i:j])
+            if key in node:
+                node, i = node[key], j
+                break
+        else:
+            return None
     return node
 
 

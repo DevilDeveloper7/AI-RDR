@@ -1,0 +1,18 @@
+{
+  "id": "replay-002",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: RustyStealer)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_002",
+    "event": "added",
+    "sha256_after": "a120f0c0defe4b6943e09f06272a86ae75d1a4524fa9bf21da25c8c0d747ef5a"
+  },
+  "data": {}
+}

@@ -1,0 +1,157 @@
+# LIVE run (real abuse.ch + OTX keys) on the student's Mac, 2026-11-19T17:57:18Z.
+# Replay alerts only: hashes come from MalwareBazaar metadata. No sample was downloaded or executed.
+# Commands: python3 scripts/e2e_demo.py --live http://127.0.0.1:5004 --alert results/candidates/alerts/001_Akira.json  (and 003_LockBit.json)
+
+===== 001_Akira =====
+M4 at http://127.0.0.1:5004 (live); alert replay-001
+1. Wazuh integration script
+  [PASS] indicators found in the alert: hash=adef929e7c44596e
+  [PASS] queued in M4: queued job 212c576dd906468ea0b9f39b326abf22
+2. M4 records for the alert (M5 format)
+  [PASS] records received: 1 of 1
+       sha256 adef929e7c44596ed1cb   M4 verdict=malicious  -> M5 status=match
+3. M5 risk scoring
+  [PASS] M5 accepted the records: no invalid sources
+  [PASS] threat intelligence counted: ti_match=55
+4. M6 dashboard adapter
+  [PASS] M6 lists the indicators for this alert: 1 item(s), health=Connected
+       SHA-256    adef929e7c44596ed1cb   Malicious  enriched
+
+RESULT: ALL CHECKS PASSED
+===== 003_LockBit =====
+M4 at http://127.0.0.1:5004 (live); alert replay-003
+1. Wazuh integration script
+  [PASS] indicators found in the alert: hash=4dc06ecee904b916
+  [PASS] queued in M4: queued job 0e350cbeefa9427ca0f71744c968b5c6
+2. M4 records for the alert (M5 format)
+  [PASS] records received: 1 of 1
+       sha256 4dc06ecee904b9165fa6   M4 verdict=malicious  -> M5 status=match
+3. M5 risk scoring
+  [PASS] M5 accepted the records: no invalid sources
+  [PASS] threat intelligence counted: ti_match=55
+4. M6 dashboard adapter
+  [PASS] M6 lists the indicators for this alert: 1 item(s), health=Connected
+       SHA-256    4dc06ecee904b9165fa6   Malicious  enriched
+
+RESULT: ALL CHECKS PASSED
+
+===== Full M4 /enrich answers =====
+{
+  "alert_id": "evidence",
+  "cached": true,
+  "details": [
+    {
+      "context_only": false,
+      "details": {
+        "hit_services": [
+          "malwarebazaar"
+        ],
+        "services": {
+          "malwarebazaar": {
+            "file_type": "elf",
+            "first_seen": "2026-09-09 09:15:27",
+            "score": 95,
+            "signature": "Akira",
+            "status": "hit",
+            "tags": [
+              "Akira",
+              "elf"
+            ]
+          },
+          "threatfox": {
+            "status": "miss"
+          }
+        }
+      },
+      "error": null,
+      "provider": "abusech",
+      "score": 95,
+      "status": "hit",
+      "tags": [
+        "Akira",
+        "elf"
+      ]
+    }
+  ],
+  "enriched_at": "2026-11-19T17:56:29.866878+00:00",
+  "error": null,
+  "latency_ms": 0.1,
+  "score": 95,
+  "sources": [
+    "malwarebazaar"
+  ],
+  "tags": [
+    "Akira",
+    "elf"
+  ],
+  "type": "hash",
+  "value": "adef929e7c44596ed1cb4c1300826874fc48d6adc9edde45f0cfa45e9792ef42",
+  "verdict": "malicious"
+}
+{
+  "alert_id": "evidence",
+  "cached": true,
+  "details": [
+    {
+      "context_only": false,
+      "details": {
+        "hit_services": [
+          "malwarebazaar"
+        ],
+        "services": {
+          "malwarebazaar": {
+            "file_type": "elf",
+            "first_seen": "2025-09-20 01:27:29",
+            "score": 95,
+            "signature": "LockBit",
+            "status": "hit",
+            "tags": [
+              "LockBit",
+              "elf",
+              "linux",
+              "lockbit",
+              "lockbit 5.0",
+              "lockbit5",
+              "Ransomware"
+            ]
+          },
+          "threatfox": {
+            "status": "miss"
+          }
+        }
+      },
+      "error": null,
+      "provider": "abusech",
+      "score": 95,
+      "status": "hit",
+      "tags": [
+        "LockBit",
+        "elf",
+        "linux",
+        "lockbit",
+        "lockbit 5.0",
+        "lockbit5",
+        "Ransomware"
+      ]
+    }
+  ],
+  "enriched_at": "2026-11-19T17:56:33.266214+00:00",
+  "error": null,
+  "latency_ms": 0.03,
+  "score": 95,
+  "sources": [
+    "malwarebazaar"
+  ],
+  "tags": [
+    "LockBit",
+    "elf",
+    "linux",
+    "lockbit",
+    "lockbit 5.0",
+    "lockbit5",
+    "Ransomware"
+  ],
+  "type": "hash",
+  "value": "4dc06ecee904b9165fa699b026045c1b6408cc7061df3d2a7bc2b7b4f0879f4d",
+  "verdict": "malicious"
+}
