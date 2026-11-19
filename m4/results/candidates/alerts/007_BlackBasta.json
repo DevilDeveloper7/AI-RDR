@@ -1,0 +1,18 @@
+{
+  "id": "replay-007",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: BlackBasta)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_007",
+    "event": "added",
+    "sha256_after": "a8894d8a71082d2a2d8799129eada9db0b280fce75945f4323e230ec26ec28d0"
+  },
+  "data": {}
+}

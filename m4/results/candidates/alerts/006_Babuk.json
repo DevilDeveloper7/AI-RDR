@@ -1,0 +1,18 @@
+{
+  "id": "replay-006",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: Babuk)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_006",
+    "event": "added",
+    "sha256_after": "dd5f751faed9a681dc66611ed67efb0f651837e80a0b7492051e1674d418b08c"
+  },
+  "data": {}
+}

@@ -1,0 +1,18 @@
+{
+  "id": "replay-002",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: Akira)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_002",
+    "event": "added",
+    "sha256_after": "5f73fd2184ffc262f1bdac74b8f15c589f8d5cf986625ff687ecd32928241f80"
+  },
+  "data": {}
+}

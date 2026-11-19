@@ -1,0 +1,20 @@
+# MOCK-DATA: offline run, M4 in mock mode (fake intelligence). Generated 2026-11-19T17:53:41Z on the student's Mac.
+# Command: python3 scripts/e2e_demo.py
+
+M4 at http://127.0.0.1:59886 (mock, fake intelligence); alert demo-0001
+1. Wazuh integration script
+  [PASS] indicators found in the alert: hash=1111111111111111, ip=185.220.101.47
+  [PASS] queued in M4: queued job 153c410302aa4ad386165b7be9ed1dc6; queued job 0430ab5979b442d3b85ab16a4e6844cd
+2. M4 records for the alert (M5 format)
+  [PASS] records received: 2 of 2
+       ip     185.220.101.47         M4 verdict=unknown    -> M5 status=no_match  (synthetic)
+       sha256 11111111111111111111   M4 verdict=malicious  -> M5 status=match  (synthetic)
+3. M5 risk scoring
+  [PASS] M5 accepted the records: no invalid sources
+  [PASS] threat intelligence counted: ti_no_match=0; ti_match=55
+4. M6 dashboard adapter
+  [PASS] M6 lists the indicators for this alert: 2 item(s), health=Warning
+       IP address 185.220.101.47         Unknown    no_data
+       SHA-256    11111111111111111111   Malicious  enriched
+
+RESULT: ALL CHECKS PASSED

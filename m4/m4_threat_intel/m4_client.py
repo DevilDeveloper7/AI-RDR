@@ -62,3 +62,21 @@ def enrich_for_m5(ioc_type: str, value: str, alert_id: str, timeout: float = 5.0
     from .m5_adapter import to_m5_record
     return to_m5_record(enrich(ioc_type, value, alert_id, timeout, base_url, session),
                         allow_synthetic=allow_synthetic)
+
+
+def threat_intel_for_alert(alert_id: str, timeout: float = 5.0, base_url: str = DEFAULT_M4_URL,
+                           session: Optional[Any] = None) -> list:
+    """M5 `threat_intel` records for the indicators the Wazuh script queued for `alert_id`.
+
+    Never raises: returns [] if M4 is down or has nothing yet (M5 then simply has no TI evidence).
+    """
+    import urllib.parse
+    http = session if session is not None else requests
+    try:
+        resp = http.get(f"{base_url.rstrip('/')}/alerts/{urllib.parse.quote(str(alert_id), safe='')}/threat_intel",
+                        timeout=timeout)
+        body = resp.json()
+        records = body.get("records") if isinstance(body, dict) else None
+        return records if isinstance(records, list) else []
+    except Exception:
+        return []

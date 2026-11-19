@@ -1,0 +1,18 @@
+{
+  "id": "replay-013",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: RansomHub)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_013",
+    "event": "added",
+    "sha256_after": "b47302ef408014fe2044ce70331e50dfb5e41ec1d82c9fbe126f39c381f6567e"
+  },
+  "data": {}
+}

@@ -1,0 +1,18 @@
+{
+  "id": "replay-009",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: BlackMatter)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_009",
+    "event": "added",
+    "sha256_after": "8f87c47d2cd49eb5d0cc2dbcedf9822c74dcb8e87670ed3f1ec9f5a0d0a74844"
+  },
+  "data": {}
+}

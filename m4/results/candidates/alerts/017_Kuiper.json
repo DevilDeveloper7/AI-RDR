@@ -1,0 +1,18 @@
+{
+  "id": "replay-017",
+  "rule": {
+    "id": "554",
+    "description": "File added (replay: Kuiper)",
+    "level": 5
+  },
+  "agent": {
+    "id": "001",
+    "name": "airdr-target"
+  },
+  "syscheck": {
+    "path": "/tmp/sample_017",
+    "event": "added",
+    "sha256_after": "4e153342189a55ffed34a91f2a3f4440af1acbf7dc58135a165a06b4e657556a"
+  },
+  "data": {}
+}

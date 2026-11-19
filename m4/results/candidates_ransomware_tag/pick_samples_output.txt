@@ -1,0 +1,17 @@
+
+family             type  first_seen  m4         sha256 (c2 ip)
+RustyStealer       exe   2026-11-17  malicious  ac233f0bfefb8b39ea84c61b0bec54037285caf5fe439f2c5160842fa4eea815 
+RustyStealer       exe   2026-11-17  malicious  a120f0c0defe4b6943e09f06272a86ae75d1a4524fa9bf21da25c8c0d747ef5a 
+CRPx0              exe   2026-08-04  malicious  28685dff00aa1752b62a8580955b2530d63092bdcc0528b872a668cddad78c11 
+CRPx0              dll   2026-08-04  malicious  ef431e36a8ac12051af588d800e1d8128d583a9d4c68187709263a13564081cd 
+Embargo            exe   2026-06-04  malicious  f4ec2dba070a9ecd1dee342329b0cd7caa406cd4995c41b9aab9aea9b73cd06d 
+Embargo            exe   2026-06-04  malicious  01712a5e443efb4aa43ef3f8b38a4245cb0d0c1bf13b8d3ac4207247a44f7ab4 
+LIUSHEN            exe   2026-03-19  malicious  370d36a89f8ffa291fd22c40dda78fd6154078b2e2b4b100d5c2429135e4aa72 
+LIUSHEN            exe   2026-03-19  malicious  c4cd6cae8532a649b239af919cb2c4e463d9145e3554a1d3425fc427e664bda0 
+BQTLock            exe   2025-10-10  malicious  9600db537e27db88ed2eca3be0ffab35cdb22a86a6dbb048d8deaf8f56944822 
+BQTLock            exe   2025-10-10  malicious  4525387f28bee6bb48d07e6989319f382447a8a6e48ae11f332dee9916feb8cc 
+LCRYX              exe   2026-02-12  malicious  69d049fed65b114aa75024d2f2fe5b59444d77abe87c82c72cb1346e4b0696cf 
+LCRYX              vbs   2025-10-05  malicious  9e65acc172956753a6ea282837c47d9af769238a895c6a743f96fccf0630c11e 
+
+wrote results/candidates/candidates.csv and 12 fake alerts in results/candidates/alerts/
+Pick the families where M4 says 'malicious', then check the team can run them safely.
